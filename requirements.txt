@@ -1,0 +1,8 @@
+# Dashboard runtime
+streamlit>=1.57
+altair>=6.1
+pandas>=3.0
+pydeck>=0.9
+
+# Data pipeline only (process_fia.py, extract_early_asr.py) — not needed to run the app
+pdfminer.six

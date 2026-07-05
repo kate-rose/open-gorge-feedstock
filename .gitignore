@@ -1,0 +1,16 @@
+# Raw FIA state CSVs (1.7GB) — regenerate via FIA Datamart WA_CSV.zip download
+extracted/
+WA_CSV.zip
+
+# Virtual environment
+.venv/
+
+# Python
+__pycache__/
+*.pyc
+
+# macOS
+.DS_Store
+
+# Streamlit local config/secrets
+.streamlit/secrets.toml
