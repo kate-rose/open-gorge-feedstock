@@ -44,7 +44,7 @@ CATEGORIES = {
         "label":        "Biomass  (0 – 5\" diameter)",
         "short":        "Biomass",
         "desc": (
-            "The smallest trees, tops, and slash — chipped into hog fuel, wood fiber, or biomass energy feedstock. "
+            "The smallest trees, tops, and slash, chipped into hog fuel, wood fiber, or biomass energy feedstock. "
             "Low unit value, but a useful byproduct of any active harvest. Often used to offset energy costs "
             "at mills or sold to biomass heating plants."
         ),
@@ -71,7 +71,7 @@ CATEGORIES = {
             "This is Skamania County's most strategically significant size class for mass timber development. "
             "\n\n*Note on fuel treatment framing:* Small-diameter thinning reduces ladder-fuel fire risk most "
             "effectively in dry mixed-conifer forests (east-side pine types). The Gifford Pinchot is predominantly "
-            "a mesic Douglas-fir / western hemlock forest where fire science is more complex — thinning can "
+            "a mesic Douglas-fir / western hemlock forest where fire science is more complex, and thinning can "
             "reduce fire risk in some stand conditions but increase it in others by drying the understory. "
             "Fuel treatment benefits should be evaluated stand-by-stand with USFS silviculturists, not assumed county-wide."
         ),
@@ -87,7 +87,7 @@ CATEGORIES = {
         "equiv_factor": 1 / 1_000,
     },
     "sawlog": {
-        "label":        "Sawlogs — Conventional Lumber  (9 – 15\")",
+        "label":        "Sawlogs: Conventional Lumber  (9 – 15\")",
         "short":        "Sawlogs",
         "desc": (
             "The workhorse of conventional lumber. Trees 9–15\" in diameter are processed "
@@ -127,7 +127,7 @@ CATEGORIES = {
         "equiv_factor": 1 / 1_000,
     },
     "large_timber": {
-        "label":        "Large Timber — Specialty  (21\"+)",
+        "label":        "Large Timber: Specialty  (21\"+)",
         "short":        "Large Timber",
         "desc": (
             "Old-growth and large second-growth trees over 21\" in diameter. "
@@ -140,7 +140,7 @@ CATEGORIES = {
         "end_uses":     "Veneer · Specialty appearance lumber · Live-edge slabs · High-value exports",
         "note":         "Harvest decisions in the 21\"+ size class require ESA Section 7 consultation, "
                         "NEPA environmental review, and forest plan compatibility analysis. "
-                        "This dashboard does not assess ecological suitability — only physical inventory.",
+                        "This dashboard does not assess ecological suitability, only physical inventory.",
         "prices": {
             "stumpage":    (3.00, 6.00,  "$/ft³ at the stump"),
             "mill_gate":   (8.00, 12.00, "$/ft³ at the mill"),
@@ -158,7 +158,7 @@ TIER_LABELS = {
     "end_product": "End Product",
 }
 TIER_HELP = {
-    "stumpage":    "Value at the stump — what a landowner earns before harvest and transport costs.",
+    "stumpage":    "Value at the stump: what a landowner earns before harvest and transport costs.",
     "mill_gate":   "Delivered value at the processing facility after logging and hauling.",
     "end_product": "Finished lumber, panel, or product market value.",
 }
@@ -172,11 +172,11 @@ FISCAL = {
         "hex":   "#969696",
     },
     "federal": {
-        "label": "Federal — Nat'l Forest (SRS/PILT)",
+        "label": "Federal: Nat'l Forest (SRS/PILT)",
         "desc":  (
             "This land is managed by the US Forest Service (Gifford Pinchot National Forest). "
             "The county receives no property tax from it. Instead, Skamania depends on "
-            "**Secure Rural Schools (SRS)** and **Payment in Lieu of Taxes (PILT)** — "
+            "**Secure Rural Schools (SRS)** and **Payment in Lieu of Taxes (PILT)**, "
             "federal programs that Congress can reduce, delay, or let expire. "
             "When SRS lapses, school and road funding falls immediately."
         ),
@@ -184,10 +184,10 @@ FISCAL = {
         "hex":   "#1e64be",
     },
     "tribal":  {
-        "label": "Tribal — trust land",
+        "label": "Tribal: trust land",
         "desc":  (
             "Trust land held by tribal nations (primarily Yakama Nation), managed under tribal sovereignty. "
-            "Under federal law, trust land is not subject to state or local property tax — a consequence of "
+            "Under federal law, trust land is not subject to state or local property tax, a consequence of "
             "treaty rights and federal trust responsibilities, not a policy choice by the county. "
             "Yakama Nation manages its forestlands under its own tribal forest plan, which may include "
             "timber harvest, cultural resource protection, and ecosystem management priorities. "
@@ -203,8 +203,8 @@ FISCAL = {
             "Corporate timber (Weyerhaeuser et al.) and private land. "
             "This is the only category that generates direct county property tax revenue. "
             "However, Washington's **Designated Forest Land** program (RCW 84.33) allows "
-            "corporate timberland to be assessed at current-use value — typically well below "
-            "market — significantly limiting what the county actually collects."
+            "corporate timberland to be assessed at current-use value, typically well below "
+            "market, which significantly limits what the county actually collects."
         ),
         "color": [30, 160, 80],
         "hex":   "#1ea050",
@@ -249,7 +249,7 @@ SRS_PAYMENTS = [
     {"fy": 2022, "amount": 2_593_667.44, "type": "SRS Formula", "note": ""},
     {"fy": 2023, "amount": 2_399_155.31, "type": "SRS Formula", "note": ""},
     {"fy": 2024, "amount":   448_081.62, "type": "25% Fund",
-     "note": "SRS lapsed — county fell back to 25% rolling average"},
+     "note": "SRS lapsed; county fell back to 25% rolling average"},
     {"fy": 2025, "amount": 2_467_842.84, "type": "SRS Formula",
      "note": "P.L. 118-42 reauthorization (FY2024–2026)"},
 ]
@@ -340,7 +340,7 @@ with st.sidebar:
             captions=[
                 "Chips, hog fuel, biomass energy",
                 "CLT / NLT mass timber feedstock",
-                "Dimensional lumber — 2×4, 2×6…",
+                "Dimensional lumber: 2×4, 2×6…",
                 "Glulam beams, premium appearance",
                 "Veneer, specialty & export products",
             ],
@@ -364,10 +364,10 @@ with st.sidebar:
             format_func=lambda k: FISCAL[k]["label"],
             captions=[
                 "All plots, colored by owner",
-                "Gifford Pinchot NF — SRS / PILT",
-                "Yakama Nation — trust land",
-                "Corporate & private — taxable",
-                "DNR trust — state school funds",
+                "Gifford Pinchot NF: SRS / PILT",
+                "Yakama Nation trust land",
+                "Corporate & private: taxable",
+                "DNR trust: state school funds",
             ],
             key="fiscal_radio",
         )
@@ -407,7 +407,7 @@ with st.sidebar:
             help="Trees-per-acre-expanded cubic feet for the size class and ownership selected above.",
         )
         st.metric(
-            f"Estimated value — {TIER_LABELS[price_tier]}",
+            f"Estimated value ({TIER_LABELS[price_tier]})",
             f"${vol_expanded * lo / 1e6:,.1f}M – ${vol_expanded * hi / 1e6:,.1f}M",
             help=f"{tier_unit}. Benchmark: \\${lo}–\\${hi}/ft³. Illustrative, not an appraisal.",
         )
@@ -544,15 +544,15 @@ if section == "🏔️ Overview":
     st.markdown("## The Balancing Act, in One Screen")
     st.markdown(
         "Skamania County is caught between two governments at once. The **federal** government "
-        "owns most of the county's forest and pays the county in place of property tax — but "
+        "owns most of the county's forest and pays the county in place of property tax, but "
         "those payments keep lapsing. The **state** is tightening logging rules on the private "
         "land that *does* pay tax. And the county's schools are the ones feeling it. "
-        "No single fix solves this; the point of this tool is to show the real numbers behind "
-        "each piece so the tradeoffs can be discussed plainly."
+        "There is no single fix. This tool lays out the numbers behind each piece so the "
+        "tradeoffs can be discussed plainly."
     )
     st.caption(
-        "Built for commissioners, district staff, and residents following the county ↔ Forest "
-        "Service conversation. Every figure traces to a source; numbers from the June 2026 "
+        "Built for commissioners, district staff, and residents following the county and Forest "
+        "Service conversation. Every figure traces to a source. Numbers from the June 2026 "
         "meeting record are marked *pending written confirmation*."
     )
 
@@ -608,24 +608,24 @@ if section == "🏔️ Overview":
   <!-- The squeeze -->
   <rect x="110" y="152" width="540" height="74" rx="8" fill="#eef1f4" stroke="#5b6b7d" stroke-width="1.5"/>
   <text x="380" y="184" text-anchor="middle" font-size="16" font-weight="700" fill="#2b3a4a">SKAMANIA COUNTY BUDGET</text>
-  <text x="380" y="208" text-anchor="middle" font-size="12" fill="#41556a">~91% of the county is federal forest — little property tax to fall back on</text>
+  <text x="380" y="208" text-anchor="middle" font-size="12" fill="#41556a">~91% of the county is federal forest, so little property tax to fall back on</text>
   <!-- Arrow to the lever -->
   <line x1="380" y1="226" x2="380" y2="264" stroke="#8a97a5" stroke-width="2"/>
   <polygon points="374,264 386,264 380,271" fill="#8a97a5"/>
   <!-- The lever -->
   <rect x="70" y="272" width="620" height="112" rx="8" fill="#e9f6ee" stroke="#2f8f5b" stroke-width="1.5"/>
-  <text x="380" y="298" text-anchor="middle" font-size="14" font-weight="700" fill="#1c5c39">THE ONE LOCAL LEVER — how federal timber gets sold</text>
+  <text x="380" y="298" text-anchor="middle" font-size="14" font-weight="700" fill="#1c5c39">THE ONE LOCAL LEVER: how federal timber gets sold</text>
   <text x="380" y="322" text-anchor="middle" font-size="12" fill="#265f3e">Traditional timber sales send money to county schools. Stewardship &amp; Good</text>
-  <text x="380" y="340" text-anchor="middle" font-size="12" fill="#265f3e">Neighbor deals — whatever their forest-health value — mostly don't.</text>
+  <text x="380" y="340" text-anchor="middle" font-size="12" fill="#265f3e">Neighbor deals, whatever their forest-health value, mostly don't.</text>
   <text x="380" y="366" text-anchor="middle" font-size="12" font-weight="600" fill="#1c5c39">Even the 2030 timber target falls short of past payments, so a timber push</text>
-  <text x="380" y="382" text-anchor="middle" font-size="12" font-weight="600" fill="#1c5c39">and federal payment reform are both needed — not one or the other.</text>
+  <text x="380" y="382" text-anchor="middle" font-size="12" font-weight="600" fill="#1c5c39">and federal payment reform are both needed, not one or the other.</text>
 </svg>
 """
     components.html(
         f'<div style="font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif">{_bal_svg}</div>',
         height=410,
     )
-    st.caption("The three pressures converging on the county budget — each quantified in the sections below.")
+    st.caption("The three pressures converging on the county budget. Each one is quantified in the sections below.")
     st.divider()
 
     _k1, _k2, _k3, _k4, _k5 = st.columns(5)
@@ -673,12 +673,12 @@ if section == "🏔️ Overview":
             f"""
 **1. The mix is the money.**
 
-The contract vehicle — not the harvest volume — determines whether schools see a dollar.
-Traditional sales flow to the 25% Fund; stewardship and Good Neighbor Authority sales
+The contract vehicle, not the harvest volume, determines whether schools see a dollar.
+Traditional sales flow to the 25% Fund. Stewardship and Good Neighbor Authority sales
 mostly don't. Even if 2026's full 36M BF program were **100% traditional sales**, the county
-would receive roughly **{_s_2026_100}/yr** at benchmark stumpage. At a stewardship-heavy mix,
-far less. The commissioners' "floor of 50%" demand is a revenue argument, and the
-arithmetic backs the instinct behind it.
+would receive roughly **{_s_2026_100}/yr** at benchmark stumpage, and far less at a
+stewardship-heavy mix. The commissioners' "floor of 50%" demand is really a revenue argument,
+and the arithmetic backs it up.
             """
         )
     with _f2:
@@ -688,10 +688,10 @@ arithmetic backs the instinct behind it.
             f"""
 **2. Even the 2030 target falls short of SRS.**
 
-At the stated 68M BF target with a **75% traditional mix** — the commissioners' aspiration —
+At the stated 68M BF target with a **75% traditional mix** (the commissioners' aspiration),
 county revenue reaches roughly **{_s_2030_75}/yr**, against an SRS-formula average of
-**{_s_avg}/yr**. The timber push and the SRS/PILT recombination strategy
-(the Merkley conversation) are **complements, not alternatives**: even a successful
+**{_s_avg}/yr**. So the timber push and the SRS/PILT recombination strategy
+(the Merkley conversation) are **complements, not alternatives**. Even a successful
 harvest program needs structural payment reform to close the gap.
             """
         )
@@ -702,10 +702,10 @@ harvest program needs structural payment reform to close the gap.
 
 Federal payment uncertainty (the FY2024 lapse), the state's Type Np buffer rule
 (effective August 2026, costs on private timberland), and a reported ~\\$250K
-SRS distribution error at Stevenson-Carson *(pending written confirmation)* are
-landing on the same county in the same budget cycles — while the district has
-now closed its second school. No single agency's process accounts for the
-cumulative picture. This dashboard tries to.
+SRS distribution error at Stevenson-Carson *(pending written confirmation)* are all
+landing on the same county in the same budget cycles, while the district has
+now closed its second school. No single agency's process accounts for the whole
+picture. This dashboard tries to.
             """
         )
 
@@ -724,18 +724,18 @@ cumulative picture. This dashboard tries to.
         {"The number": f"~{_mbf_replace_fy25/1000:.0f}M BF/yr",
          "What it is": "GP-wide traditional-sale volume needed to replace the FY2025 SRS payment "
                        "(100% traditional mix, benchmark stumpage)",
-         "Source": "This dashboard — assumptions in Scenario tab"},
+         "Source": "This dashboard (assumptions in Scenario tab)"},
         {"The number": f"~{_mbf_replace_avg/1000:.0f}M BF/yr",
          "What it is": "GP-wide traditional-sale volume needed to match the SRS-formula average",
-         "Source": "This dashboard — assumptions in Scenario tab"},
+         "Source": "This dashboard (assumptions in Scenario tab)"},
         {"The number": "68M BF by 2030",
          "What it is": "The Forest Service's own stated program target (vs. 36M BF planned for 2026)",
-         "Source": "June 30, 2026 BOCC meeting — pending written confirmation"},
+         "Source": "June 30, 2026 BOCC meeting, pending written confirmation"},
     ])
     st.table(_room_df)
     st.caption(
         "Revenue math assumes \\$300/MBF blended stumpage and a 50% Skamania share of Gifford "
-        "Pinchot receipts — both adjustable under **County Revenue & Timber Payments**. These "
+        "Pinchot receipts, both adjustable under **County Revenue & Timber Payments**. These "
         "are order-of-magnitude anchors for a conversation, not budget forecasts."
     )
 
@@ -743,27 +743,27 @@ cumulative picture. This dashboard tries to.
     st.markdown("#### Where to go deeper")
     st.markdown(
         """
-- **💰 County Revenue & Timber Payments** — the payment history, the school-funding stakes,
+- **💰 County Revenue & Timber Payments.** The payment history, the school-funding stakes,
   and the traditional-sale-vs-stewardship question that decides whether logging reaches schools.
-- **🗺️ Where the Timber Is** — the county's timber by size and owner, and why ~91% of it
+- **🗺️ Where the Timber Is.** The county's timber by size and owner, and why ~91% of it
   generates no property tax.
-- **🌊 State Logging Rules** — the new state stream-buffer rule (effect August 2026) and its
+- **🌊 State Logging Rules.** The new state stream-buffer rule (in effect August 2026) and its
   cost to the private land that *is* on the tax rolls.
-- **❓ Questions & Sources** — plain answers, including why stewardship contracts don't pay
+- **❓ Questions & Sources.** Plain answers, including why stewardship contracts don't pay
   schools, and where every number comes from.
         """
     )
 
 # ════════════════════════════════════════════════════════════════════════════
 if section == "🗺️ Where the Timber Is":
-    st.markdown("## Where the Timber Is — and Who Owns It")
+    st.markdown("## Where the Timber Is, and Who Owns It")
     st.markdown(
         "This map shows the county's timber, broken out by tree size and by who owns the land. "
         "The ownership split is the whole fiscal problem in one picture: the vast majority sits "
         "on federal land that pays no property tax."
     )
     st.info(
-        "👈 **Drill down using the “Map filters” in the left sidebar** — change the tree size "
+        "👈 **Drill down using the “Map filters” in the left sidebar.** Change the tree size "
         "class, price basis, and land owner to update the map and the numbers below. "
         "(On a phone, open the sidebar with the **›** arrow in the top-left.)",
         icon="🎛️",
@@ -782,16 +782,16 @@ if section == "🗺️ Where the Timber Is":
     # Fuel treatment mode banner
     if cat_key == "small_timber" and fiscal_filter == "federal" and exclude_reserved:
         st.success(
-            "**🔥 Fuel Treatment View** — showing small-diameter timber (5–9\") on "
+            "**🔥 Fuel Treatment View.** Showing small-diameter timber (5–9\") on "
             "non-wilderness Gifford Pinchot NF land. These stands overlap with the ladder-fuel "
             "targets of USFS's 10-Year Wildfire Crisis Strategy. Thinning them can produce "
-            "mass timber feedstock and generate 25% Fund receipts for the county — "
-            "the same work, two different framings."
+            "mass timber feedstock and generate 25% Fund receipts for the county: the same work, "
+            "two different framings."
         )
         st.caption(
             "⚠️ **Science note:** Ladder-fuel thinning is best-established in dry ponderosa pine forests "
-            "(eastern Cascades). The Gifford Pinchot's wet west-side Douglas-fir / hemlock forests have "
-            "more complex fire dynamics — thinning benefits depend heavily on stand structure, slope, and "
+            "(eastern Cascades). The Gifford Pinchot's wet west-side Douglas-fir and hemlock forests have "
+            "more complex fire dynamics, and thinning benefits depend heavily on stand structure, slope, and "
             "aspect. Stand-level analysis with USFS silviculturists is needed before assuming county-wide "
             "fuel reduction benefits."
         )
@@ -808,7 +808,7 @@ if section == "🗺️ Where the Timber Is":
 
     # Ownership breakdown chart
     st.divider()
-    st.markdown("#### Ownership Breakdown — Volume by Fiscal Category")
+    st.markdown("#### Ownership Breakdown: Volume by Fiscal Category")
 
     total_all = chart_data["volume"].sum()
     if total_all > 0:
@@ -871,7 +871,7 @@ if section == "🗺️ Where the Timber Is":
         fed_pct = federal_vol / total_all * 100 if total_all > 0 else 0
         tax_pct = taxable_vol / total_all * 100 if total_all > 0 else 0
         st.caption(
-            f"**{fed_pct:.0f}% of {cat['short'].lower()} volume is on federal land** — "
+            f"**{fed_pct:.0f}% of {cat['short'].lower()} volume is on federal land**, "
             f"managed by the US Forest Service, generating SRS/PILT payments instead of property tax. "
             f"Only **{tax_pct:.0f}%** is on locally taxable land."
         )
@@ -881,13 +881,13 @@ if section == "🗺️ Where the Timber Is":
     # Map
     st.divider()
     if fiscal_filter == "all":
-        map_note = "Dots are colored by land ownership / fiscal category. Size reflects timber volume."
+        map_note = "Dots are colored by land ownership. Size reflects timber volume."
     else:
         map_note = (
             f"Showing only **{FISCAL[fiscal_filter]['label']}** plots. "
             "Dot size and brightness reflect expanded volume for the selected timber category."
         )
-    st.markdown(f"**Map — FIA Sample Plots:** {map_note} White markers are towns.")
+    st.markdown(f"**Map of FIA sample plots.** {map_note} White markers are towns.")
 
     if HAS_PYDECK:
         fia_layer = pdk.Layer(
@@ -1016,7 +1016,7 @@ if section == "🗺️ Where the Timber Is":
         st.dataframe(disp, use_container_width=True)
 
     # Expert methodology
-    with st.expander("Expert Methodology — For University Researchers"):
+    with st.expander("Expert Methodology (for university researchers)"):
         invyr_min = meta.get("invyr_min", "unknown")
         invyr_max = meta.get("invyr_max", "unknown")
         st.markdown(
@@ -1028,7 +1028,7 @@ Tables used: `WA_PLOT`, `WA_TREE`, and `WA_COND`.
 
 ---
 
-### ⚠️ Measurement Year Range — Critical Limitation
+### ⚠️ Measurement Year Range: Critical Limitation
 
 This dashboard includes **all available FIA plot measurements for Skamania County,
 spanning inventory years {invyr_min}–{invyr_max}** (a rolling panel design where each plot
@@ -1091,11 +1091,11 @@ county estimates require `TPA_ADJ` and `POP_STRATUM` post-stratification.
 
 Ranges reflect Pacific Northwest benchmarks (2023–2025). Three tiers:
 stumpage (landowner), mill gate (delivered), end product (finished goods).
-Illustrative only — not formal appraisals.
+Illustrative only, not formal appraisals.
 
 **Note on small-diameter stumpage:** For small-diameter timber (5–9\") on steep or complex
 National Forest terrain in the Pacific Northwest, **stumpage prices are frequently near zero
-or negative** — meaning the Forest Service may subsidize removal through stewardship contracts
+or negative**, meaning the Forest Service may subsidize removal through stewardship contracts
 rather than generating revenue. The value capture argument for this size class depends on
 mill gate pricing, which requires a negotiated stewardship contract structure.
 
@@ -1126,11 +1126,11 @@ def _fia_model():
     st.markdown(
         "The program figures shown on the main page work from the Forest Service's actual "
         "different question: what could the land base itself support, using FIA inventory data? "
-        "Useful for testing whether the 2030 target is physically plausible — with the caveats below."
+        "Useful for testing whether the 2030 target is physically plausible, with the caveats below."
     )
 
     st.info(
-        "The 'Exclude wilderness & reserved areas' checkbox in the sidebar applies here — "
+        "The 'Exclude wilderness & reserved areas' checkbox in the sidebar applies here. "
         "checking it removes congressionally reserved plots from the inventory base.",
         icon="ℹ️",
     )
@@ -1181,7 +1181,7 @@ def _fia_model():
     )
 
     st.divider()
-    st.markdown("#### Scenario Results by Timber Category — Federal Land Only")
+    st.markdown("#### Scenario Results by Timber Category: Federal Land Only")
 
     # Per-plot mean per-acre density across all federal plots (including zero-volume plots)
     n_fed_plots = max(len(federal_df), 1)
@@ -1207,8 +1207,8 @@ def _fia_model():
             "County-wide vol (ft³)": county_vol,
             "Harvest/yr (MBF)":      harvest_mbf,
             "Stumpage ($/ft³)":      f"${lo_p:.2f} – ${hi_p:.2f}",
-            "County 25% — Low":      county_lo,
-            "County 25% — High":     county_hi,
+            "County 25% (low)":      county_lo,
+            "County 25% (high)":     county_hi,
         })
 
     scen_df = pd.DataFrame(scenario_rows)
@@ -1216,24 +1216,24 @@ def _fia_model():
     disp_scen["Mean density (ft³/ac)"] = disp_scen["Mean density (ft³/ac)"].map("{:,.1f}".format)
     disp_scen["County-wide vol (ft³)"] = disp_scen["County-wide vol (ft³)"].map("{:,.0f}".format)
     disp_scen["Harvest/yr (MBF)"]      = disp_scen["Harvest/yr (MBF)"].map("{:,.1f}".format)
-    disp_scen["County 25% — Low"]      = disp_scen["County 25% — Low"].map("${:,.0f}".format)
-    disp_scen["County 25% — High"]     = disp_scen["County 25% — High"].map("${:,.0f}".format)
+    disp_scen["County 25% (low)"]      = disp_scen["County 25% (low)"].map("${:,.0f}".format)
+    disp_scen["County 25% (high)"]     = disp_scen["County 25% (high)"].map("${:,.0f}".format)
     st.dataframe(disp_scen, use_container_width=True, hide_index=True)
     st.caption(
         "MBF = thousand board feet (1 ft³ ≈ 12 board feet). "
-        "County-wide volume is the FIA mean per-acre density × entered federal acreage — "
+        "County-wide volume is the FIA mean per-acre density × entered federal acreage, "
         "a planning estimate, not a statistically rigorous county total."
     )
 
     st.divider()
     m1, m2, m3, m4 = st.columns(4)
     m1.metric(
-        f"County Receipt — Low",
+        f"County Receipt (low)",
         f"${total_county_lo/1e6:,.2f}M/yr",
         help="Low-end stumpage × 25% Fund formula, county-wide acreage estimate.",
     )
     m2.metric(
-        f"County Receipt — High",
+        f"County Receipt (high)",
         f"${total_county_hi/1e6:,.2f}M/yr",
         help="High-end stumpage × 25% Fund formula.",
     )
@@ -1245,16 +1245,16 @@ def _fia_model():
     m4.metric(
         "Formula",
         "25% of stumpage",
-        help="16 U.S.C. § 500 — counties received 25% of gross NF timber receipts for roads and schools.",
+        help="16 U.S.C. § 500: counties received 25% of gross NF timber receipts for roads and schools.",
     )
 
     # ── Breakeven analysis ────────────────────────────────────────────────────
     st.divider()
-    st.markdown("#### Fuel Treatment Breakeven — Small Timber")
+    st.markdown("#### Fuel Treatment Breakeven: Small Timber")
     st.markdown(
         "The central policy question behind Commissioner Leckie's proposal: "
         "does the stumpage revenue from thinning small-diameter trees cover the cost of the treatment? "
-        "If so, USFS can run a self-funding project. If not, what subsidy is required — and "
+        "If so, USFS can run a self-funding project. If not, what subsidy is required, and "
         "is that subsidy cheaper than the cost of the wildfire it prevents?"
     )
 
@@ -1308,7 +1308,7 @@ def _fia_model():
     if stumpage_rev_mid >= treatment_cost:
         st.success(
             f"At the current treatment cost ({_s_treat}/acre) and mean small timber density "
-            f"({st_mean_per_ac:,.0f} ft³/acre), stumpage revenue **covers treatment costs** — "
+            f"({st_mean_per_ac:,.0f} ft³/acre), stumpage revenue **covers treatment costs**, "
             f"making a self-funding stewardship contract feasible. Adjust the sliders to test sensitivity."
         )
     else:
@@ -1322,7 +1322,7 @@ def _fia_model():
             f"The **{_s_gap}/acre gap** would need to be covered by USFS appropriations, "
             f"CFLRP grant funds, or a stewardship contract capturing mill gate value instead of stumpage. "
             f"At mill gate prices ({_s_mg_lo}–{_s_mg_hi}/ft³), "
-            f"revenue reaches **{_s_rev_lo}–{_s_rev_hi}/acre** — "
+            f"revenue reaches **{_s_rev_lo}–{_s_rev_hi}/acre**, "
             f"well above treatment cost."
         )
 
@@ -1366,7 +1366,7 @@ def _fia_model():
         else:
             st.warning(
                 f"At {harvest_rate:.1f}%/yr harvest, the 25% Fund scenario yields roughly "
-                f"**{_s_delta}/yr less** than the SRS payment entered — meaning Congress's "
+                f"**{_s_delta}/yr less** than the SRS payment entered, meaning Congress's "
                 f"SRS formula has been more generous than active harvest would have generated at this rate. "
                 f"Try increasing the harvest rate to find the breakeven."
             )
@@ -1378,7 +1378,7 @@ def _fia_model():
 - Federal inventory in this scenario includes all FIA measurement cycles, not just the most recent.
   Actual harvestable volume would require current-cycle analysis with EVALID filtering.
 - "Sustainable yield" depends on growth rates, age class distribution, and the Gifford Pinchot
-  forest plan — 2% is a planning assumption only.
+  forest plan; 2% is a planning assumption only.
 - The 25% Fund formula applies to gross receipts, which track stumpage prices at the time of sale.
 - Biomass (0–5\" trees) shows near-zero because VOLCFGRS is not recorded for sub-merchantable trees.
 - This tool is for policy illustration and public education, not for budget forecasting.
@@ -1389,20 +1389,20 @@ if section == "💰 County Revenue & Timber Payments":
     st.markdown("## County Revenue & Timber Payments")
     st.markdown(
         "**The short version.** Most of Skamania is federal forest, so instead of property "
-        "tax the county leans on federal timber payments — and those have become unreliable. "
+        "tax the county leans on federal timber payments, and those have become unreliable. "
         "Below: what the county has actually received, what it pays for, and the one choice "
         "(how the timber is sold) that decides whether more logging would ever reach county schools."
     )
     st.caption(
         "Background: counties with National Forest land historically received 25% of timber "
         "sale receipts (the \"25% Fund\"). When harvests collapsed in the 1990s, Congress replaced "
-        "that with Secure Rural Schools (SRS) payments — which need periodic reauthorization and "
+        "that with Secure Rural Schools (SRS) payments, which need periodic reauthorization and "
         "have lapsed. Full explanation under Questions & Sources."
     )
 
     # ── Historical SRS payment chart ─────────────────────────────────────────
     st.divider()
-    st.markdown("### The Payment Record — Skamania County, FY2010–FY2025")
+    st.markdown("### The Payment Record: Skamania County, FY2010–FY2025")
     st.caption(
         "Source: USDA Forest Service ASR-10-03 Final Payment Detail Reports. "
         "FY2010–2012 extracted from USFS PDF archives (per-district amounts summed). "
@@ -1487,11 +1487,11 @@ if section == "💰 County Revenue & Timber Payments":
         f"Range: **{_s_min}** (FY{_srs_min_rec['fy']}, 25% Fund fallback) to "
         f"**{_s_max}** (FY{_srs_max_rec['fy']}). "
         f"**Key risk:** Congress let SRS lapse in FY2024, dropping county revenue by "
-        f"**{_drop_pct}%** in a single fiscal year — from {_s_fy23} to {_s_fy24}."
+        f"**{_drop_pct}%** in a single fiscal year, from {_s_fy23} to {_s_fy24}."
     )
 
     # ── What the payments fund: the school district stakes ───────────────────
-    st.markdown("##### What these payments fund — the Stevenson-Carson stakes")
+    st.markdown("##### What these payments fund: the Stevenson-Carson stakes")
     _sk1, _sk2, _sk3 = st.columns(3)
     _sk1.metric(
         "Schools closed",
@@ -1517,15 +1517,15 @@ if section == "💰 County Revenue & Timber Payments":
     st.caption(
         "Federal forest payments are split between county roads and schools under state law "
         "(RCW 28A.520 governs the school apportionment). The chart above is county-level; "
-        "the school district receives its share through the state distribution — which is "
+        "the school district receives its share through the state distribution, which is "
         "where the reported drafting error hit. The point of pairing these numbers with the "
-        "payment history: the FY2024 lapse and the distribution error are not abstractions — "
-        "they land on a district that has now closed two schools."
+        "payment history: the FY2024 lapse and the distribution error are not abstractions. "
+        "They land on a district that has now closed two schools."
     )
 
     # ── Part 1: The actual GP program & the mix question ─────────────────────
     st.divider()
-    st.markdown("### The Mix Question — Traditional Sales vs. Stewardship")
+    st.markdown("### The Mix Question: Traditional Sales vs. Stewardship")
     st.markdown(
         """
 At the **June 16 and June 30, 2026 BOCC meetings**, commissioners pressed the Gifford Pinchot
@@ -1535,10 +1535,10 @@ to make traditional timber sales at least **50% of the forest's program, with 75
 | Contract vehicle | Where the timber value goes | County schools & roads receive |
 |---|---|---|
 | **Traditional timber sale** | Purchaser pays USFS → gross receipts | **25% of receipts** via the 25% Fund |
-| **Stewardship contract** | Timber value traded against restoration work (goods-for-services) | **Little to none** — receipts are offset, not distributed |
+| **Stewardship contract** | Timber value traded against restoration work (goods-for-services) | **Little to none.** Receipts are offset, not distributed |
 | **Good Neighbor Authority (GNA)** | Receipts retained for further restoration under the agreement | **None distributed to counties** |
 
-Whatever the forest-health merits of each vehicle — and stewardship work has real merits —
+Whatever the forest-health merits of each vehicle (and stewardship work has real merits),
 the *vehicle choice* determines whether a school district sees a dollar. That is the entire
 substance of the "floor" demand.
         """
@@ -1552,7 +1552,7 @@ substance of the "floor" demand.
                help="Forest-wide thinning program, stated 20–30 year horizon.")
     st.caption(
         "Program figures as shared by Forest Service staff at the June 30, 2026 BOCC meeting. "
-        "Meeting record — **pending written confirmation** from the Gifford Pinchot."
+        "Meeting record, **pending written confirmation** from the Gifford Pinchot."
     )
 
     _mx1, _mx2 = st.columns(2)
@@ -1569,7 +1569,7 @@ substance of the "floor" demand.
             "Skamania share of GP 25% Fund distribution (%)",
             min_value=30, max_value=70, value=50, step=5,
             help="The 25% Fund distributes receipts to counties in proportion to NF acreage "
-                 "within each county. ASR reports list 532,288 Skamania acres in the GP — "
+                 "within each county. ASR reports list 532,288 Skamania acres in the GP, "
                  "the largest county share. Adjust if you have the precise distribution percentage.",
         )
     _mx_share = _mx_share_pct / 100
@@ -1577,7 +1577,7 @@ substance of the "floor" demand.
     st.markdown("##### County revenue by program level and traditional-sale share")
     _mx_rows = []
     for _lvl_name, _lvl_mbf in GP_PROGRAM_MBF.items():
-        _row = {"GP program level": f"{_lvl_name} — {_lvl_mbf/1000:.0f}M BF/yr"}
+        _row = {"GP program level": f"{_lvl_name}: {_lvl_mbf/1000:.0f}M BF/yr"}
         for _trad in (0.25, 0.50, 0.75, 1.00):
             _rev = _lvl_mbf * _trad * _mx_price * 0.25 * _mx_share
             _row[f"{int(_trad*100)}% traditional"] = f"${_rev/1e6:.2f}M/yr"
@@ -1587,7 +1587,7 @@ substance of the "floor" demand.
         "County revenue = GP volume × traditional share × blended stumpage × 25% Fund × Skamania share. "
         "**50% traditional** is the commissioners' stated floor; **75%** is the stated goal. "
         "The 25% Fund pays a 7-year rolling average of receipts, so a program ramp-up reaches "
-        "county budgets gradually — full effect only after several sustained years."
+        "county budgets gradually, with full effect only after several sustained years."
     )
 
     # SRS replacement threshold — the reverse calculation
@@ -1626,10 +1626,10 @@ substance of the "floor" demand.
             f"**The arithmetic behind the strategy question:** at these assumptions, even the "
             f"Forest Service's 2030 target at the commissioners' 75% traditional goal falls about "
             f"**{_s_gap75}/yr short** of the SRS-formula average. This is not an argument against "
-            f"the timber push — it is the reason the timber push and the **SRS/PILT recombination** "
+            f"the timber push. It is the reason the timber push and the **SRS/PILT recombination** "
             f"strategy (raised at the June 30 meeting after EDC Director Waters' conversation with "
             f"Sen. Merkley) are complements rather than alternatives. If even success falls short, "
-            f"structural payment reform isn't just advocacy — it's arithmetic.",
+            f"structural payment reform isn't just advocacy; it's arithmetic.",
             icon="🧮",
         )
     else:
@@ -1644,7 +1644,7 @@ substance of the "floor" demand.
         """
 **A structural option on the table:** at the June 30 meeting, the Forest Supervisor offered to
 connect Skamania with a **California county that built a master stewardship agreement program
-from scratch**. A master agreement doesn't by itself change the 25% Fund math — but it can give
+from scratch**. A master agreement doesn't by itself change the 25% Fund math, but it can give
 the county a seat in designing sale structure, local-hire terms, and the traditional/stewardship
 mix over a multi-year horizon rather than sale-by-sale. The county's homework before that
 conversation: know exactly which revenue outcome it needs the agreement to protect
@@ -1654,25 +1654,25 @@ conversation: know exactly which revenue outcome it needs the agreement to prote
 
 
     st.divider()
-    with st.expander("🔍 Deeper detail — what the land base could support (FIA model)"):
+    with st.expander("🔍 Deeper detail: what the land base could support (FIA model)"):
         _fia_model()
 
 # ════════════════════════════════════════════════════════════════════════════
 if section == "🌊 State Logging Rules":
-    st.markdown("## State Logging Rules — the New Stream Buffers")
+    st.markdown("## State Logging Rules: the New Stream Buffers")
     st.markdown(
         "**The short version.** While federal payments shrink, the state is adding to the cost "
         "of logging the private land that actually pays county tax. A new rule widens the "
         "no-cut buffer along small non-fish streams from 50 to 75 feet, starting August 2026. "
-        "This page puts real numbers on what that means for Skamania — using the state's own "
-        "cost estimates — and sits alongside the federal payment picture, because the county "
+        "This page puts real numbers on what that means for Skamania, using the state's own "
+        "cost estimates, and sits alongside the federal payment picture, because the county "
         "feels both at once."
     )
     st.markdown(
         """
 The Washington State Forest Practices Board voted **7–5 on November 12, 2025** to expand
-no-harvest buffer requirements along Type Np (non-fish-bearing perennial) streams — small
-year-round streams without fish — on private and state-owned forestland in Western Washington.
+no-harvest buffer requirements along Type Np (non-fish-bearing perennial) streams (small
+year-round streams without fish) on private and state-owned forestland in Western Washington.
 
 **This is not advocacy for or against the rule.** The rule was adopted through the state's
 formal rulemaking process and cites peer-reviewed science on water temperature and stream
@@ -1695,7 +1695,7 @@ start from a shared factual baseline rather than competing generalizations.
     st.markdown("#### How Skamania County's Streams Are Classified")
     st.markdown(
         "Washington DNR classifies every mapped stream under the Forest Practices rules. "
-        "The classification determines whether a buffer is required — and how wide. "
+        "The classification determines whether a buffer is required, and how wide. "
         "Data queried from the [DNR FP Hydro REST API](https://gis.dnr.wa.gov/site2/rest/services/Public_Forest_Practices/WADNR_PUBLIC_FP_Hydro/MapServer/0) "
         "for the Skamania County bounding box (42,335 stream segments, all land ownerships)."
     )
@@ -1779,16 +1779,16 @@ start from a shared factual baseline rather than competing generalizations.
     st.markdown("##### Inside the 15,367 miles of Non-Fish Streams")
     st.markdown(
         "The Forest Practices Act distinguishes between **perennial** (year-round flow) and "
-        "**seasonal** streams. The new buffer rule specifically targets **Type Np** — "
+        "**seasonal** streams. The new buffer rule specifically targets **Type Np**: "
         "non-fish-bearing *perennial* streams. Most non-fish stream miles in the DNR database "
-        "currently carry an **unknown continuity** classification — which is the pivotal "
+        "currently carry an **unknown continuity** classification, which is the pivotal "
         "variable in the rule's long-term impact."
     )
 
     _np_breakdown = pd.DataFrame([
-        {"continuity": "Perennial (Np) — confirmed",     "miles": 491.5,
-         "color": "#e88020", "note": "Directly subject to new rule — buffer 50 ft → 75 ft"},
-        {"continuity": "Seasonal (Ns) — confirmed",      "miles": 340.1,
+        {"continuity": "Perennial (Np), confirmed",     "miles": 491.5,
+         "color": "#e88020", "note": "Directly subject to new rule; buffer 50 ft → 75 ft"},
+        {"continuity": "Seasonal (Ns), confirmed",      "miles": 340.1,
          "color": "#f4a340", "note": "Not subject to the Np rule; existing rules apply"},
         {"continuity": "Unknown continuity",              "miles": 14_535.4,
          "color": "#d0d0d0", "note": "The contested bucket: field reclassification could "
@@ -1846,7 +1846,7 @@ start from a shared factual baseline rather than competing generalizations.
     st.altair_chart(_np_bar + _np_text_layer_in + _np_text_layer_out, use_container_width=True)
 
     st.caption(
-        "Source: Washington DNR FP Hydro layer, May 2026. County bounding box query — "
+        "Source: Washington DNR FP Hydro layer, May 2026. County bounding box query "
         "includes streams on all land ownership types (federal, state, private, tribal). "
         "Only private and state-owned forestland is subject to the Forest Practices Act."
     )
@@ -1884,7 +1884,7 @@ start from a shared factual baseline rather than competing generalizations.
 
     # ── Impact calculator ─────────────────────────────────────────────────────
     st.divider()
-    st.markdown("#### Impact Calculator — Skamania County")
+    st.markdown("#### Impact Calculator: Skamania County")
     st.markdown(
         "Use the state's own preliminary CBA figures (Industrial Economics Inc., April 2025) "
         "to estimate Skamania-specific impacts. Two key uncertainties drive the range: "
@@ -1974,7 +1974,7 @@ start from a shared factual baseline rather than competing generalizations.
     )
 
     # What the rule is designed to protect
-    with st.expander("What the rule is designed to protect — the benefit side"):
+    with st.expander("What the rule is designed to protect (the benefit side)"):
         st.markdown(
             """
 The state's preliminary CBA found the following **probable benefits** from wider Np buffers:
@@ -1982,12 +1982,12 @@ The state's preliminary CBA found the following **probable benefits** from wider
 **Water temperature protection (moderate to major benefit)**
 Research cited by the FPB shows that 50-foot buffers adjacent to Np streams are insufficient
 to prevent water temperature increases during and after harvest. Cooler, more stable stream
-temperatures benefit macroinvertebrates, amphibians, and — indirectly — fish in downstream
+temperatures benefit macroinvertebrates, amphibians, and, indirectly, fish in downstream
 connected Type F waters. The FPB determined that meeting Clean Water Act temperature standards
 requires the wider buffers.
 
 **Wildlife habitat (moderate benefit)**
-The rule adds an estimated 67,000–170,000 acres of harvest-restricted riparian forest statewide —
+The rule adds an estimated 67,000–170,000 acres of harvest-restricted riparian forest statewide,
 representing 0.4–0.9% of total western Washington forest habitat. Riparian zones support
 85% of the state's terrestrial vertebrate species and are disproportionately important for
 breeding, foraging, and migration.
@@ -1998,12 +1998,12 @@ torrent salamanders, Pacific giant salamanders) that are sensitive to both water
 and riparian canopy removal.
 
 **Carbon sequestration (negligible to minor)**
-IEc estimated 220,000–3.3 million metric tons CO₂ in additional sequestration over 45 years —
+IEc estimated 220,000–3.3 million metric tons CO₂ in additional sequestration over 45 years,
 a wide range reflecting significant uncertainty about harvest practices and timber end uses.
 
 **The 7–5 vote reflects genuine disagreement** among board members about whether these benefits,
 many of which are difficult to monetize, outweigh the quantified costs borne by private landowners
-and timber-dependent counties. That's not a flaw in the process — it's an honest reflection of
+and timber-dependent counties. That's not a flaw in the process; it's an honest reflection of
 the tradeoff.
             """
         )
@@ -2013,7 +2013,7 @@ the tradeoff.
     st.markdown("#### Combined Fiscal Pressure on Skamania County")
     st.markdown(
         "Federal and state policy pressures don't arrive in separate buckets. "
-        "The chart below puts them in the same frame using real numbers — "
+        "The chart below puts them in the same frame using real numbers, "
         "not to argue against either policy, but to show the cumulative fiscal context "
         "county commissioners are navigating simultaneously."
     )
@@ -2033,7 +2033,7 @@ the tradeoff.
     _pressure_df = pd.DataFrame([
         {
             "item":     "SRS lapse gap (FY2024 vs. avg SRS year)",
-            "category": "Federal — SRS Risk",
+            "category": "Federal (SRS risk)",
             "amount":   _srs_lapse_gap,
             "unit":     "annual",
             "note":     f"SRS formula avg ${_srs_formula_avg/1e6:.2f}M/yr vs. "
@@ -2041,7 +2041,7 @@ the tradeoff.
         },
         {
             "item":     "Buffer rule: annual economic activity lost (mid-estimate)",
-            "category": "State — Buffer Rule",
+            "category": "State (buffer rule)",
             "amount":   _econ_mid,
             "unit":     "annual",
             "note":     f"At {_fpa_pct}% FPA land, {_reclass_pct}% reclassification. "
@@ -2049,15 +2049,15 @@ the tradeoff.
         },
         {
             "item":     "Buffer rule: one-time land value reduction (mid-estimate)",
-            "category": "State — Buffer Rule",
+            "category": "State (buffer rule)",
             "amount":   _land_mid,
             "unit":     "one-time",
             "note":     f"Present value of forestland market value reduction. "
                         f"Range: ${_land_lo/1e6:.1f}M–${_land_hi/1e6:.1f}M.",
         },
         {
-            "item":     "PILT (baseline federal payment — stable)",
-            "category": "Federal — Stable",
+            "item":     "PILT (baseline federal payment, stable)",
+            "category": "Federal (stable)",
             "amount":   800_000,
             "unit":     "annual",
             "note":     "Estimated PILT for Skamania County (~$800K/yr). "
@@ -2066,9 +2066,9 @@ the tradeoff.
     ])
 
     _pressure_colors = {
-        "Federal — SRS Risk":  "#e88020",
-        "State — Buffer Rule": "#c0392b",
-        "Federal — Stable":    "#1e64be",
+        "Federal (SRS risk)":  "#e88020",
+        "State (buffer rule)": "#c0392b",
+        "Federal (stable)":    "#1e64be",
     }
 
     _press_bars = (
@@ -2117,7 +2117,7 @@ the tradeoff.
         f"**Reading this chart:** The SRS lapse gap ({_s_srs_gap}/yr during a lapse year) and the "
         f"buffer rule's annual economic impact ({_s_econ_mid}/yr at current slider settings) are "
         f"both annual flows. The land value reduction ({_s_land_mid}, one-time present value) is a "
-        f"stock effect — it reduces the underlying asset value of private timberland permanently, "
+        f"stock effect that reduces the underlying asset value of private timberland permanently, "
         f"affecting financing capacity and estate planning for small forest landowners. "
         f"Adjust the sliders above to see how assumptions change the picture."
     )
@@ -2153,8 +2153,8 @@ and Puget Sound watersheds. An honest policy conversation accounts for that dist
 
 **3. Can FPA rules and SRS advocacy be coordinated?**
 Skamania is facing simultaneous pressure from federal payment uncertainty (SRS) and state
-harvest restrictions. A county that can quantify both pressures together — as this dashboard
-does — has a stronger argument for federal payment reform, CFLRP funding, and state-level
+harvest restrictions. A county that can quantify both pressures together, as this dashboard
+does, has a stronger argument for federal payment reform, CFLRP funding, and state-level
 mitigation programs than one presenting either issue in isolation.
 
 **4. Are there mitigation mechanisms for small forest landowners?**
@@ -2175,7 +2175,7 @@ if section == "❓ Questions & Sources":
     with st.expander("Where does this data come from?"):
         st.markdown(
             """
-The numbers come from the **USDA Forest Service's Forest Inventory and Analysis (FIA) program** —
+The numbers come from the **USDA Forest Service's Forest Inventory and Analysis (FIA) program**,
 the federal government's ongoing census of all forests in the United States.
 
 FIA has been collecting data since the 1930s. For Washington State, field crews visit thousands
@@ -2187,19 +2187,19 @@ This dashboard uses the publicly available Washington State download from the FI
     with st.expander("How does the Forest Service actually count the trees?"):
         st.markdown(
             """
-**Field crews on the ground — not satellites or drones.**
+**Field crews on the ground, not satellites or drones.**
 
 Each FIA plot is a cluster of four small circular subplots, each about 24 feet in radius.
 A two- or three-person crew walks every plot and physically measures each tree using a
 diameter tape (like a tailor's measuring tape, but calibrated for tree trunks).
 
 They record:
-- **Diameter at breast height (DBH)** — measured at 4.5 feet off the ground
-- **Tree height** — measured with a clinometer (an angle-measuring tool)
+- **Diameter at breast height (DBH)**, measured at 4.5 feet off the ground
+- **Tree height**, measured with a clinometer (an angle-measuring tool)
 - **Species**, health, and status (live vs. dead)
 
 Volume is then estimated using species-specific equations built from trees that were
-actually felled and measured decades ago. No lasers — clipboard-and-tape forestry,
+actually felled and measured decades ago. No lasers, just clipboard-and-tape forestry,
 scaled up with statistics.
             """
         )
@@ -2207,7 +2207,7 @@ scaled up with statistics.
     with st.expander("If they only measured some plots, how do we get county-wide numbers?"):
         st.markdown(
             """
-**Statistical sampling** — the same principle as a poll or a medical study.
+**Statistical sampling**, the same principle as a poll or a medical study.
 
 FIA places plots on a systematic grid across the US, roughly one plot per 6,000 acres of forest.
 Each plot's measurements are expanded to represent the surrounding landscape using **TPA_UNADJ**
@@ -2216,7 +2216,7 @@ Each plot's measurements are expanded to represent the surrounding landscape usi
 
 **Important caveat:** Because it's a sample, there is uncertainty in the totals.
 The true county-wide volume could be 20–30% higher or lower.
-These numbers are best used to understand *relative* differences — not precise inventory counts.
+These numbers are best used to understand *relative* differences, not precise inventory counts.
             """
         )
 
@@ -2241,14 +2241,14 @@ generating no local property tax.
 **Secure Rural Schools (SRS)** and **Payment in Lieu of Taxes (PILT)** are federal programs
 that compensate counties for the tax revenue they cannot collect from federal land.
 
-- **PILT** — A baseline annual payment calculated by formula, funded through annual appropriations.
+- **PILT.** A baseline annual payment calculated by formula, funded through annual appropriations.
   More stable but typically modest.
-- **SRS** — Originally tied to timber receipts from National Forest sales. When timber harvests
+- **SRS.** Originally tied to timber receipts from National Forest sales. When timber harvests
   fell (spotted owl era and after), Congress replaced lost revenue with direct SRS payments.
   Has expired and been reauthorized multiple times, creating multi-year funding gaps.
 
 When SRS payments are delayed or reduced, Skamania County faces immediate shortfalls in
-**school funding, road maintenance, and emergency services** — the direct consequences of
+**school funding, road maintenance, and emergency services**, the direct consequences of
 having most of its land base off the property tax rolls.
 
 The ownership breakdown chart on this dashboard shows visually how much of the county's
@@ -2267,7 +2267,7 @@ than market value. This can reduce assessed value to a fraction of what the land
 worth at market, significantly limiting what the county collects in property tax.
 
 In practice, the ~4% of Skamania's forested plots on corporate or private land generates
-real but modest local tax revenue — supplemented by a small excise tax on timber harvests
+real but modest local tax revenue, supplemented by a small excise tax on timber harvests
 in lieu of the assessment gap.
             """
         )
@@ -2275,14 +2275,14 @@ in lieu of the assessment gap.
     with st.expander("What does \"exclude wilderness & reserved areas\" do?"):
         st.markdown(
             """
-Some National Forest land is designated as **wilderness** by Congress — areas where
+Some National Forest land is designated as **wilderness** by Congress, areas where
 commercial logging is permanently prohibited regardless of timber values.
 
 Checking this box removes those plots from the map and volume calculations,
 giving a picture of the timber that is at least *theoretically* available for management
 (subject to all other federal plan requirements, ESA, etc.).
 
-In Skamania County, about 135 of the 927 sample plots fall in reserved/wilderness areas —
+In Skamania County, about 135 of the 927 sample plots fall in reserved/wilderness areas,
 roughly 15% of the federal plots.
             """
         )
@@ -2297,7 +2297,7 @@ The price ranges shown are based on Pacific Northwest timber market data from ro
 and contract terms.
 
 The purpose of showing dollar values here is to help commissioners and community members
-understand the *relative* difference between size classes and market paths —
+understand the *relative* difference between size classes and market paths,
 not to appraise specific timber sales. Any actual transaction would require a licensed
 timber cruiser and formal appraisal.
             """
@@ -2321,21 +2321,21 @@ how much material is there in volumetric terms.
     with st.expander("Can Skamania County actually sell this timber?"):
         st.markdown(
             """
-**That depends on land ownership — and most of this forest isn't county-owned.**
+**That depends on land ownership, and most of this forest isn't county-owned.**
 
 The FIA data covers *all* forested land in Skamania County regardless of owner.
 County government has direct authority only over county-owned parcels (a small fraction).
 
 For timber on **National Forest land**: the county can advocate for and participate in
 collaborative forest management, but the US Forest Service controls what gets harvested
-and when — subject to its forest plan, ESA consultations, and public process.
+and when, subject to its forest plan, ESA consultations, and public process.
 
 For timber on **tribal land**: the county has no jurisdiction.
 
 For **corporate and private timber**: the county's role is primarily through permitting
-and tax assessment — not direct management.
+and tax assessment, not direct management.
 
-This dashboard is best read as a picture of the *total resource base* — useful for
+This dashboard is best read as a picture of the *total resource base*, useful for
 understanding economic potential, making the case for SRS reauthorization,
 and supporting regional economic development conversations.
             """
@@ -2344,30 +2344,30 @@ and supporting regional economic development conversations.
     with st.expander("Why don't stewardship contracts send money to county schools?"):
         st.markdown(
             """
-**Because of how the money moves — not because the timber is worth less.**
+**Because of how the money moves, not because the timber is worth less.**
 
 Under a **traditional timber sale**, a purchaser pays the Forest Service for the timber.
 Those payments become *gross receipts*, and under the 25% Fund formula (16 U.S.C. § 500),
 25% of gross receipts flows to counties for roads and schools.
 
 Under a **stewardship contract** (authorized permanently in 2014), the Forest Service
-*trades* timber value against restoration work — thinning, road decommissioning, habitat
-work — in a goods-for-services exchange. Because the timber value offsets the contractor's
+*trades* timber value against restoration work (thinning, road decommissioning, habitat
+work) in a goods-for-services exchange. Because the timber value offsets the contractor's
 service costs instead of being collected as receipts, there is little or nothing left to
 distribute through the 25% Fund.
 
 **Good Neighbor Authority (GNA)** sales work differently again: a state agency (in Washington,
 DNR) administers work on federal land, and receipts are retained to fund further restoration
-under the agreement — not distributed to counties.
+under the agreement, not distributed to counties.
 
 This is the mechanical reason the "what share of the program is traditional sales?" question,
 pressed by commissioners at the June 16 and June 30, 2026 meetings, is a schools-funding
-question and not just a forestry preference. Stewardship work has genuine forest-health value —
-the tradeoff is real on both sides. But a forest program can grow substantially in acres and
+question and not just a forestry preference. Stewardship work has genuine forest-health value,
+and the tradeoff is real on both sides. But a forest program can grow substantially in acres and
 board feet while county revenue stays flat, if the growth comes through vehicles that bypass
 the 25% Fund.
 
-*The mix table in the Federal Revenue Scenario tab quantifies this for the Gifford Pinchot's
+*The mix table under County Revenue & Timber Payments quantifies this for the Gifford Pinchot's
 stated program levels.*
             """
         )
@@ -2378,29 +2378,29 @@ stated program levels.*
 **The claim:** when Congress created the Columbia River Gorge National Scenic Area in 1986
 (P.L. 99-663), it removed land from the timber base and the county tax rolls. Commissioners
 argue the Act contemplated that the **Gifford Pinchot and Mount Hood National Forests would
-offset that loss** — making today's low traditional-sale volumes not just an economic
+offset that loss**, making today's low traditional-sale volumes not just an economic
 disappointment but a departure from the bargain struck when the Scenic Area was created.
 
 This argument surfaced in the June 2026 Forest Service exchanges and connects to the same
 tax-base math behind the county's May 2026 confrontation with Friends of the Columbia Gorge.
 
-**What this dashboard can and can't say about it:** the fiscal premise is verifiable — the
+**What this dashboard can and can't say about it:** the fiscal premise is verifiable. The
 Scenic Area did remove land from the tax rolls, and this dashboard documents how little of
 the county's timber base generates local revenue. Whether the Act creates an *obligation*
 on the two forests, and what kind, is a legal question about specific statutory text that
 this dashboard does not settle. Anyone using this argument in a formal setting should have
-the specific provision in hand — it is a citation-checkable claim, and it will be checked.
+the specific provision in hand; it is a citation-checkable claim, and it will be checked.
 
 *Status: argument as presented in the June 2026 meeting record. The statutory basis has not
 been independently verified for this dashboard.*
             """
         )
 
-    with st.expander("What does this dashboard NOT show? — Honest limitations"):
+    with st.expander("What does this dashboard NOT show? (Honest limitations)"):
         st.markdown(
             f"""
 This dashboard was built to inform policy conversations, not to advocate for a single outcome.
-Here is what it does **not** capture — and what a complete analysis would need to include.
+Here is what it does **not** capture, and what a complete analysis would need to include.
 
 ---
 
@@ -2415,7 +2415,7 @@ current standing inventory by 30–50%. A rigorous analysis would filter to EVAL
 
 **🌲 Gross volume, not net merchantable**
 
-`VOLCFGRS` is the gross cubic foot volume of the entire stem — including defect, decay, and
+`VOLCFGRS` is the gross cubic foot volume of the entire stem, including defect, decay, and
 breakage that a mill cannot use. Actual harvestable volume is 10–25% lower. The 21"+ size class
 is most affected, as older trees often carry significant defect.
 
@@ -2425,14 +2425,14 @@ is most affected, as older trees often carry significant defect.
 
 Active timber harvest is one path to county fiscal sustainability. This dashboard does not show:
 
-- **Conservation easements** — landowners can receive payment to restrict development; the county
+- **Conservation easements.** Landowners can receive payment to restrict development; the county
   benefits through maintained land use and some property tax continuity
-- **Forest carbon markets** — Washington's Forest Carbon Initiative and voluntary carbon markets
+- **Forest carbon markets.** Washington's Forest Carbon Initiative and voluntary carbon markets
   allow landowners (including potentially coordinated county/USFS agreements) to receive payment
   for carbon sequestration in lieu of harvest
-- **Recreation economy** — the Gifford Pinchot attracts hikers, hunters, climbers, and river
+- **Recreation economy.** The Gifford Pinchot attracts hikers, hunters, climbers, and river
   users. A detailed recreation economy analysis would show jobs and tax revenue from this sector
-- **Federal payment reform** — advocacy for structural SRS reform or expanded PILT formulas
+- **Federal payment reform.** Advocacy for structural SRS reform or expanded PILT formulas
   may be more durable than relying on harvest receipts that fluctuate with timber markets
 
 A comprehensive county fiscal strategy would evaluate all of these alongside timber.
@@ -2450,7 +2450,7 @@ forest** with a different fire history and ecology. In wet west-side forests:
   in some stand conditions
 - Bark beetle outbreaks (a key driver of fuel accumulation in dry forests) are less central here
 
-This doesn't mean thinning has no role — it means the case needs to be made stand by stand with
+This doesn't mean thinning has no role; it means the case needs to be made stand by stand with
 USFS silviculturists, not assumed from county-wide inventory.
 
 ---
