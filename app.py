@@ -574,8 +574,8 @@ if section == "🏔️ Overview":
     _br_2026_100 = _br_county_rev(GP_PROGRAM_MBF["2026 planned"], 1.00)
 
     # ── The balancing act, as one picture ────────────────────────────────────
-    _fed_stat1 = f"${_br_srs_avg/1e6:.1f}M/yr average, but"
-    _fed_stat2 = f"${_br_fy24/1e6:.2f}M in the FY2024 lapse (−{_br_drop_pct:.0f}%)"
+    _fed_stat1 = f"${_br_srs_avg/1e6:.1f}M/yr average,"
+    _fed_stat2 = f"then ${_br_fy24/1e6:.2f}M in the FY2024 lapse"
     _bal_svg = f"""
 <svg viewBox="0 0 760 392" width="100%" height="392" preserveAspectRatio="xMidYMid meet"
      xmlns="http://www.w3.org/2000/svg"
