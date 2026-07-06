@@ -407,7 +407,7 @@ with st.sidebar:
         st.metric(
             f"Estimated value — {TIER_LABELS[price_tier]}",
             f"${vol_expanded * lo / 1e6:,.1f}M – ${vol_expanded * hi / 1e6:,.1f}M",
-            help=f"{tier_unit}. Benchmark: ${lo}–${hi}/ft³. Illustrative, not an appraisal.",
+            help=f"{tier_unit}. Benchmark: \\${lo}–\\${hi}/ft³. Illustrative, not an appraisal.",
         )
         st.metric("Plots shown", f"{n_plots:,} of {len(df):,}")
 
@@ -666,7 +666,7 @@ if section == "🏔️ Overview":
 
     _f1, _f2, _f3 = st.columns(3)
     with _f1:
-        _s_2026_100 = f"${_br_2026_100/1e6:.2f}M"
+        _s_2026_100 = f"\\${_br_2026_100/1e6:.2f}M"
         st.markdown(
             f"""
 **1. The mix is the money.**
@@ -680,8 +680,8 @@ arithmetic backs the instinct behind it.
             """
         )
     with _f2:
-        _s_2030_75 = f"${_br_2030_75/1e6:.1f}M"
-        _s_avg     = f"${_br_srs_avg/1e6:.2f}M"
+        _s_2030_75 = f"\\${_br_2030_75/1e6:.1f}M"
+        _s_avg     = f"\\${_br_srs_avg/1e6:.2f}M"
         st.markdown(
             f"""
 **2. Even the 2030 target falls short of SRS.**
@@ -699,7 +699,7 @@ harvest program needs structural payment reform to close the gap.
 **3. Pressure is converging from both governments.**
 
 Federal payment uncertainty (the FY2024 lapse), the state's Type Np buffer rule
-(effective August 2026, costs on private timberland), and a reported ~$250K
+(effective August 2026, costs on private timberland), and a reported ~\\$250K
 SRS distribution error at Stevenson-Carson *(pending written confirmation)* are
 landing on the same county in the same budget cycles — while the district has
 now closed its second school. No single agency's process accounts for the
@@ -732,7 +732,7 @@ cumulative picture. This dashboard tries to.
     ])
     st.table(_room_df)
     st.caption(
-        "Revenue math assumes $300/MBF blended stumpage and a 50% Skamania share of Gifford "
+        "Revenue math assumes \\$300/MBF blended stumpage and a 50% Skamania share of Gifford "
         "Pinchot receipts — both adjustable under **County Revenue & Timber Payments**. These "
         "are order-of-magnitude anchors for a conversation, not budget forecasts."
     )
@@ -1162,7 +1162,7 @@ def _fia_model():
         treatment_cost = st.slider(
             "Fuel treatment cost ($/acre)",
             min_value=500, max_value=2_000, value=1_200, step=100,
-            help="USFS ground-based thinning in the Cascades typically runs $800–$1,500/acre. "
+            help="USFS ground-based thinning in the Cascades typically runs \\$800–\\$1,500/acre. "
                  "Helicopter-assisted terrain pushes toward the high end.",
         )
 
@@ -1271,7 +1271,7 @@ def _fia_model():
     b2.metric(
         "Stumpage revenue/acre",
         f"${stumpage_rev_lo:,.0f} – ${stumpage_rev_hi:,.0f}",
-        help=f"At ${st_lo_p:.2f}–${st_hi_p:.2f}/ft³ stumpage.",
+        help=f"At \\${st_lo_p:.2f}–\\${st_hi_p:.2f}/ft³ stumpage.",
     )
     b3.metric(
         "Net USFS cost/acre",
@@ -1290,12 +1290,12 @@ def _fia_model():
     _mg_rev_hi = st_mean_per_ac * _mg_hi
 
     # Pre-format dollar strings to avoid LaTeX-triggering $ in markdown f-strings
-    _s_treat   = f"${treatment_cost:,}"
-    _s_stump   = f"${stumpage_rev_mid:,.0f}"
-    _s_mg_lo   = f"${_mg_lo:.2f}"
-    _s_mg_hi   = f"${_mg_hi:.2f}"
-    _s_rev_lo  = f"${_mg_rev_lo:,.0f}"
-    _s_rev_hi  = f"${_mg_rev_hi:,.0f}"
+    _s_treat   = f"\\${treatment_cost:,}"
+    _s_stump   = f"\\${stumpage_rev_mid:,.0f}"
+    _s_mg_lo   = f"\\${_mg_lo:.2f}"
+    _s_mg_hi   = f"\\${_mg_hi:.2f}"
+    _s_rev_lo  = f"\\${_mg_rev_lo:,.0f}"
+    _s_rev_hi  = f"\\${_mg_rev_hi:,.0f}"
 
     if stumpage_rev_mid >= treatment_cost:
         st.success(
@@ -1307,7 +1307,7 @@ def _fia_model():
         gap = treatment_cost - stumpage_rev_mid
         gap_pct = gap / treatment_cost * 100
         cover_pct = 100 - gap_pct
-        _s_gap = f"${gap:,.0f}"
+        _s_gap = f"\\${gap:,.0f}"
         st.warning(
             f"Stumpage revenue (midpoint **{_s_stump}/acre**) covers "
             f"**{cover_pct:.0f}%** of the {_s_treat}/acre treatment cost. "
@@ -1348,7 +1348,7 @@ def _fia_model():
             "SRS payment entered",
             f"${srs_actual:,.0f}/yr",
         )
-        _s_delta = f"${abs(delta):,.0f}"
+        _s_delta = f"\\${abs(delta):,.0f}"
         if delta > 0:
             st.success(
                 f"At {harvest_rate:.1f}%/yr harvest, the 25% Fund would generate roughly "
@@ -1469,11 +1469,11 @@ if section == "💰 County Revenue & Timber Payments":
     _fy24_rec  = next(r for r in SRS_PAYMENTS if r["fy"] == 2024)
     _fy23_rec  = next(r for r in SRS_PAYMENTS if r["fy"] == 2023)
     _drop_pct  = int(round((1 - _fy24_rec["amount"] / _fy23_rec["amount"]) * 100))
-    _s_avg     = f"${_srs_avg_formula/1e6:.2f}M"
-    _s_min     = f"${_srs_min_rec['amount']/1e6:.2f}M"
-    _s_max     = f"${_srs_max_rec['amount']/1e6:.2f}M"
-    _s_fy23    = f"${_fy23_rec['amount']/1e6:.2f}M"
-    _s_fy24    = f"${_fy24_rec['amount']/1e6:.2f}M"
+    _s_avg     = f"\\${_srs_avg_formula/1e6:.2f}M"
+    _s_min     = f"\\${_srs_min_rec['amount']/1e6:.2f}M"
+    _s_max     = f"\\${_srs_max_rec['amount']/1e6:.2f}M"
+    _s_fy23    = f"\\${_fy23_rec['amount']/1e6:.2f}M"
+    _s_fy24    = f"\\${_fy24_rec['amount']/1e6:.2f}M"
     st.caption(
         f"SRS Formula years average **{_s_avg}/yr**. "
         f"Range: **{_s_min}** (FY{_srs_min_rec['fy']}, 25% Fund fallback) to "
@@ -1553,7 +1553,7 @@ substance of the "floor" demand.
             "Blended stumpage ($/MBF)",
             min_value=100, max_value=600, value=300, step=25,
             help="Blended across size classes and species. Westside federal stumpage varies "
-                 "widely with sale design; recent regional comparables run roughly $200–$450/MBF. "
+                 "widely with sale design; recent regional comparables run roughly \\$200–\\$450/MBF. "
                  "This is the single most sensitive assumption in the table below.",
         )
     with _mx2:
@@ -1612,7 +1612,7 @@ substance of the "floor" demand.
         help="What the commissioners' aspirational mix delivers at the stated 2030 volume target.",
     )
 
-    _s_gap75 = f"${abs(_mx_gap_75)/1e6:.2f}M"
+    _s_gap75 = f"\\${abs(_mx_gap_75)/1e6:.2f}M"
     if _mx_gap_75 > 0:
         st.info(
             f"**The arithmetic behind the strategy question:** at these assumptions, even the "
@@ -1953,7 +1953,7 @@ start from a shared factual baseline rather than competing generalizations.
         f"{_mbf_lo:,.0f} – {_mbf_hi:,.0f} MBF/yr",
         help="Thousand board feet per year of reduced harvest on affected FPA land. "
              "At these volumes, annual timber excise tax reduction is "
-             f"${_tax_lo:,.0f}–${_tax_hi:,.0f}/yr.",
+             f"\\${_tax_lo:,.0f}–\\${_tax_hi:,.0f}/yr.",
     )
 
     st.caption(
@@ -1962,7 +1962,7 @@ start from a shared factual baseline rather than competing generalizations.
         f"**{_total_np_mi:,.0f} total Np miles**, of which **{_fpa_np_mi:,.0f} miles** are estimated "
         f"on FPA-regulated land ({_fpa_pct}%). "
         f"Per-mile figures from statewide IEc CBA averages — Skamania terrain and species mix may differ. "
-        f"Annual excise tax impact: **${_tax_lo:,.0f}–${_tax_hi:,.0f}/yr**."
+        f"Annual excise tax impact: **\\${_tax_lo:,.0f}–\\${_tax_hi:,.0f}/yr**."
     )
 
     # What the rule is designed to protect
@@ -2102,9 +2102,9 @@ the tradeoff.
 
     st.altair_chart(_press_bars + _press_text, use_container_width=True)
 
-    _s_srs_gap  = f"${_srs_lapse_gap/1e6:.2f}M"
-    _s_econ_mid = f"${_econ_mid/1e3:,.0f}K"
-    _s_land_mid = f"${_land_mid/1e6:.1f}M"
+    _s_srs_gap  = f"\\${_srs_lapse_gap/1e6:.2f}M"
+    _s_econ_mid = f"\\${_econ_mid/1e3:,.0f}K"
+    _s_land_mid = f"\\${_land_mid/1e6:.1f}M"
     st.caption(
         f"**Reading this chart:** The SRS lapse gap ({_s_srs_gap}/yr during a lapse year) and the "
         f"buffer rule's annual economic impact ({_s_econ_mid}/yr at current slider settings) are "
@@ -2139,7 +2139,7 @@ DNR should publish a field reclassification plan and timeline for western Washin
 so landowners can plan capital improvements and harvest schedules accordingly.
 
 **2. What is the county-level incidence of costs vs. the statewide distribution of benefits?**
-The CBA's $320M–$1B statewide cost is borne primarily by landowners in timber-dependent counties.
+The CBA's \\$320M–\\$1B statewide cost is borne primarily by landowners in timber-dependent counties.
 The water temperature, habitat, and tribal cultural benefits are felt across the entire Columbia
 and Puget Sound watersheds. An honest policy conversation accounts for that distributional asymmetry.
 
