@@ -1034,8 +1034,8 @@ This dashboard includes **all available FIA plot measurements for Skamania Count
 spanning inventory years {invyr_min}–{invyr_max}** (a rolling panel design where each plot
 is revisited roughly every 10 years).
 
-**What this means:** The same physical plot location may appear more than once in the dataset
-— measured once around 2005 and again around 2015, for example. Volume figures shown here are
+**What this means:** The same physical plot location may appear more than once in the dataset,
+measured once around 2005 and again around 2015, for example. Volume figures shown here are
 **not** equivalent to a current point-in-time inventory. A tree measured in 2008 that appears
 in this data may have since been harvested, died, or grown into a larger size class.
 
@@ -1076,12 +1076,12 @@ for plots with multiple conditions. `RESERVCD = 1` indicates wilderness or other
 
 ### Volume Variables
 
-**`VOLCFGRS`** — **Gross** cubic foot volume of the entire stem, including defect, decay,
+**`VOLCFGRS`** is the **gross** cubic foot volume of the entire stem, including defect, decay,
 and breakage that a mill would reject. Actual net merchantable volume is typically 10–25% lower,
 with larger trees (premium, large_timber) showing the greatest defect-related reduction.
 NULL for sub-merchantable trees (treated as 0 here).
 
-**`TPA_UNADJ`** — Trees Per Acre unadjusted expansion factor. `VOLCFGRS × TPA_UNADJ` = cubic
+**`TPA_UNADJ`** is the Trees Per Acre unadjusted expansion factor. `VOLCFGRS × TPA_UNADJ` = cubic
 feet per acre contribution for that sample tree. Unadjusted factors are used here; proper
 county estimates require `TPA_ADJ` and `POP_STRATUM` post-stratification.
 
@@ -1124,14 +1124,15 @@ def _fia_model():
     st.divider()
     st.markdown("#### The FIA inventory model")
     st.markdown(
-        "The program figures shown on the main page work from the Forest Service's actual "
-        "different question: what could the land base itself support, using FIA inventory data? "
-        "Useful for testing whether the 2030 target is physically plausible, with the caveats below."
+        "The program figures on the main page use the Forest Service's actual numbers. This "
+        "section asks a different question: what could the land base itself support, based on "
+        "FIA inventory data? It's a way to check whether the 2030 target is physically plausible, "
+        "with the caveats below."
     )
 
     st.info(
         "The 'Exclude wilderness & reserved areas' checkbox in the sidebar applies here. "
-        "checking it removes congressionally reserved plots from the inventory base.",
+        "Checking it removes congressionally reserved plots from the inventory base.",
         icon="ℹ️",
     )
     st.warning(
@@ -1155,7 +1156,7 @@ def _fia_model():
             "Annual harvest rate (% of standing inventory)",
             min_value=0.5, max_value=5.0, value=2.0, step=0.5, format="%.1f%%",
             help="Typical sustainable yield from actively managed NF land runs 1–3%/year. "
-                 "Planning assumption only — not a silvicultural prescription.",
+                 "Planning assumption only, not a silvicultural prescription.",
         )
     with inp2:
         fed_acres = st.number_input(
@@ -1163,7 +1164,7 @@ def _fia_model():
             min_value=100_000, max_value=1_000_000, value=650_000, step=10_000,
             format="%d",
             help="Gifford Pinchot NF spans ~1.3M acres across several counties. "
-                 "Skamania holds the largest share — roughly 600–700k acres. "
+                 "Skamania holds the largest share, roughly 600–700k acres. "
                  "Adjust if you have a more precise figure from the forest plan.",
         )
     with inp3:
@@ -1258,7 +1259,7 @@ def _fia_model():
         "is that subsidy cheaper than the cost of the wildfire it prevents?"
     )
 
-    # Focus on small timber — the fuel treatment category
+    # Focus on small timber (the fuel treatment category)
     st_mean_per_ac   = federal_df["small_timber_vol_expanded"].mean()
     st_lo_p, st_hi_p, _ = CATEGORIES["small_timber"]["prices"]["stumpage"]
     stumpage_rev_lo  = st_mean_per_ac * st_lo_p    # $/acre
