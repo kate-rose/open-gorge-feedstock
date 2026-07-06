@@ -686,13 +686,14 @@ and the arithmetic backs it up.
         _s_avg     = f"\\${_br_srs_avg/1e6:.2f}M"
         st.markdown(
             f"""
-**2. Even the 2030 target falls short of SRS.**
+**2. At realistic prices, even the 2030 target falls short of SRS.**
 
-At the stated 68M BF target with a **75% traditional mix** (the commissioners' aspiration),
-county revenue reaches roughly **{_s_2030_75}/yr**, against an SRS-formula average of
-**{_s_avg}/yr**. So the timber push and the SRS/PILT recombination strategy
-(the Merkley conversation) are **complements, not alternatives**. Even a successful
-harvest program needs structural payment reform to close the gap.
+At the stated 68M BF target with a **75% traditional mix** (the commissioners' aspiration)
+and benchmark stumpage of \\$300/MBF, county revenue reaches roughly **{_s_2030_75}/yr**,
+against an SRS-formula average of **{_s_avg}/yr**. The gap only closes if timber fetches
+top-of-range prices, which small-diameter fuel-treatment wood rarely does. So the timber push
+and the SRS/PILT recombination strategy (the Merkley conversation) are
+**complements, not alternatives**.
             """
         )
     with _f3:
@@ -1630,7 +1631,7 @@ substance of the "floor" demand.
             f"the timber push. It is the reason the timber push and the **SRS/PILT recombination** "
             f"strategy (raised at the June 30 meeting after EDC Director Waters' conversation with "
             f"Sen. Merkley) are complements rather than alternatives. If even success falls short, "
-            f"structural payment reform isn't just advocacy; it's arithmetic.",
+            f"structural payment reform isn't just advocacy; it's what the numbers show at realistic prices.",
             icon="🧮",
         )
     else:
@@ -1640,6 +1641,14 @@ substance of the "floor" demand.
             f"(68M BF, nearly double current) *and* the mix shift to materialize, and the 7-year "
             f"rolling average delays the full effect."
         )
+
+    st.caption(
+        "**How sensitive is this?** The estimate scales directly with three inputs: the stumpage "
+        "price and Skamania's share (the two sliders above) and the traditional-sale mix. At "
+        "benchmark **\\$300/MBF** it lands near two-thirds of the SRS average; it only reaches "
+        "parity at top-of-range prices (**~\\$450/MBF**), which small-diameter fuel-treatment wood "
+        "rarely commands. This is an economics estimate, not a fixed number. Move the sliders to test it."
+    )
 
     st.markdown(
         """
