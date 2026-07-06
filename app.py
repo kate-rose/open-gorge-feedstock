@@ -307,14 +307,21 @@ with st.sidebar:
     st.divider()
 
     # Persisted section nav — holds its place when a filter below triggers a rerun.
-    section = st.radio("Go to", options=SECTIONS, key="nav_radio")
+    st.markdown("### 📑 Sections")
+    st.caption("Click to move between pages of the dashboard.")
+    section = st.radio(
+        "Dashboard sections",
+        options=SECTIONS,
+        key="nav_radio",
+        label_visibility="collapsed",
+    )
 
     # The timber/ownership filters only affect the map, so they only show there.
     if section == "🗺️ Where the Timber Is":
         st.divider()
         if st.button(
             "🔥 Fuel Treatment View",
-            width="stretch",
+            use_container_width=True,
             help="Jumps to small-diameter timber (5–9\") on non-wilderness Gifford Pinchot "
                  "land — the fuel-thinning size class.",
         ):
@@ -849,7 +856,7 @@ if section == "🗺️ Where the Timber Is":
             text="label:N",
         )
 
-        st.altair_chart(bar + text_in + text_out, width="stretch")
+        st.altair_chart(bar + text_in + text_out, use_container_width=True)
 
         # Fiscal dependency callout
         federal_vol = chart_data.loc[chart_data["fiscal_cat"] == "federal", "volume"].sum()
@@ -944,7 +951,7 @@ if section == "🗺️ Where the Timber Is":
             tooltip=tooltip,
             map_style="https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
         )
-        st.pydeck_chart(deck, width="stretch")
+        st.pydeck_chart(deck, use_container_width=True)
     else:
         # stlite / web build: pydeck unavailable — Altair lon/lat scatter fallback.
         _fb = map_df.copy()
@@ -971,7 +978,7 @@ if section == "🗺️ Where the Timber Is":
                 towns=TOWNS,
                 height=600,
             ),
-            width="content",
+            use_container_width=False,
         )
         st.caption(
             "🗺️ Simplified map (web version): points plotted by longitude/latitude, colored by "
@@ -998,7 +1005,7 @@ if section == "🗺️ Where the Timber Is":
         disp.columns = ["Plot CN", "Lat", "Lon", "Ownership", "Fiscal Cat", "Reserved",
                         "Expanded Vol (ft³)", "Raw Vol (ft³)", "Trees"]
         disp = disp.sort_values("Expanded Vol (ft³)", ascending=False).reset_index(drop=True)
-        st.dataframe(disp, width="stretch")
+        st.dataframe(disp, use_container_width=True)
 
     # Expert methodology
     with st.expander("Expert Methodology — For University Researchers"):
@@ -1203,7 +1210,7 @@ def _fia_model():
     disp_scen["Harvest/yr (MBF)"]      = disp_scen["Harvest/yr (MBF)"].map("{:,.1f}".format)
     disp_scen["County 25% — Low"]      = disp_scen["County 25% — Low"].map("${:,.0f}".format)
     disp_scen["County 25% — High"]     = disp_scen["County 25% — High"].map("${:,.0f}".format)
-    st.dataframe(disp_scen, width="stretch", hide_index=True)
+    st.dataframe(disp_scen, use_container_width=True, hide_index=True)
     st.caption(
         "MBF = thousand board feet (1 ft³ ≈ 12 board feet). "
         "County-wide volume is the FIA mean per-acre density × entered federal acreage — "
@@ -1450,7 +1457,7 @@ if section == "💰 County Revenue & Timber Payments":
         )
     )
 
-    st.altair_chart(_srs_bars + _srs_text + _gap_text, width="stretch")
+    st.altair_chart(_srs_bars + _srs_text + _gap_text, use_container_width=True)
 
     # Summary callout
     _srs_confirmed = [r for r in SRS_PAYMENTS if r["amount"] > 0]
@@ -1567,7 +1574,7 @@ substance of the "floor" demand.
             _rev = _lvl_mbf * _trad * _mx_price * 0.25 * _mx_share
             _row[f"{int(_trad*100)}% traditional"] = f"${_rev/1e6:.2f}M/yr"
         _mx_rows.append(_row)
-    st.dataframe(pd.DataFrame(_mx_rows), width="stretch", hide_index=True)
+    st.dataframe(pd.DataFrame(_mx_rows), use_container_width=True, hide_index=True)
     st.caption(
         "County revenue = GP volume × traditional share × blended stumpage × 25% Fund × Skamania share. "
         "**50% traditional** is the commissioners' stated floor; **75%** is the stated goal. "
@@ -1758,7 +1765,7 @@ start from a shared factual baseline rather than competing generalizations.
         text=alt.Text("label:N"),
     )
 
-    st.altair_chart(_stream_bar + _st_text_in + _st_text_out, width="stretch")
+    st.altair_chart(_stream_bar + _st_text_in + _st_text_out, use_container_width=True)
 
     # Non-fish sub-breakdown
     st.markdown("##### Inside the 15,367 miles of Non-Fish Streams")
@@ -1828,7 +1835,7 @@ start from a shared factual baseline rather than competing generalizations.
         y=alt.Y("continuity:N", sort="-x"),
         text=alt.Text("label:N"),
     )
-    st.altair_chart(_np_bar + _np_text_layer_in + _np_text_layer_out, width="stretch")
+    st.altair_chart(_np_bar + _np_text_layer_in + _np_text_layer_out, use_container_width=True)
 
     st.caption(
         "Source: Washington DNR FP Hydro layer, May 2026. County bounding box query — "
@@ -2093,7 +2100,7 @@ the tradeoff.
         )
     )
 
-    st.altair_chart(_press_bars + _press_text, width="stretch")
+    st.altair_chart(_press_bars + _press_text, use_container_width=True)
 
     _s_srs_gap  = f"${_srs_lapse_gap/1e6:.2f}M"
     _s_econ_mid = f"${_econ_mid/1e3:,.0f}K"
