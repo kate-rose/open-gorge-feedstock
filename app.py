@@ -9,8 +9,18 @@ from pathlib import Path
 
 import altair as alt
 import pandas as pd
-import pydeck as pdk
 import streamlit as st
+import streamlit.components.v1 as components
+
+# pydeck powers the interactive slippy maps. It ships with a normal Streamlit install
+# (local run, Streamlit Community Cloud) but is NOT bundled in the stlite/WebAssembly
+# build used for the static GitHub Pages version — and it won't install cleanly there.
+# So we import it optionally and fall back to a lightweight Altair point map when absent.
+try:
+    import pydeck as pdk
+    HAS_PYDECK = True
+except ModuleNotFoundError:
+    HAS_PYDECK = False
 
 DATA_FILE = Path(__file__).parent / "skamania_feedstock.json"
 
@@ -270,8 +280,17 @@ TOWNS = pd.DataFrame([
     {"name": "Skamania",      "lat": 45.6290, "lon": -122.0382},
 ])
 
-# ── Session state defaults (enables the preset button to set widget values) ───
+# ── Section navigation + session state defaults ───────────────────────────────
+SECTIONS = [
+    "🏔️ Overview",
+    "🗺️ Where the Timber Is",
+    "💰 County Revenue & Timber Payments",
+    "🌊 State Logging Rules",
+    "❓ Questions & Sources",
+]
+
 _SS_DEFAULTS = {
+    "nav_radio":    "🏔️ Overview",
     "cat_radio":    "small_timber",
     "tier_radio":   "mill_gate",
     "fiscal_radio": "all",
@@ -284,116 +303,110 @@ for _k, _v in _SS_DEFAULTS.items():
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.title("Open Gorge")
-    st.subheader("Skamania Feedstock Inventory")
+    st.caption("Skamania Feedstock Inventory")
     st.divider()
 
-    if st.button(
-        "🔥 Fuel Treatment View",
-        use_container_width=True,
-        help="Presets filters to small-diameter timber on non-wilderness Gifford Pinchot NF land — "
-             "the size class that drives ladder-fuel fire risk and is the target of USFS's "
-             "10-Year Wildfire Crisis Strategy.",
-    ):
-        st.session_state.cat_radio    = "small_timber"
-        st.session_state.fiscal_radio = "federal"
-        st.session_state.reserved_cb  = True
-        st.rerun()
+    # Persisted section nav — holds its place when a filter below triggers a rerun.
+    section = st.radio("Go to", options=SECTIONS, key="nav_radio")
 
-    st.divider()
+    # The timber/ownership filters only affect the map, so they only show there.
+    if section == "🗺️ Where the Timber Is":
+        st.divider()
+        if st.button(
+            "🔥 Fuel Treatment View",
+            width="stretch",
+            help="Jumps to small-diameter timber (5–9\") on non-wilderness Gifford Pinchot "
+                 "land — the fuel-thinning size class.",
+        ):
+            st.session_state.cat_radio    = "small_timber"
+            st.session_state.fiscal_radio = "federal"
+            st.session_state.reserved_cb  = True
+            st.rerun()
 
-    cat_key = st.radio(
-        "**Timber Category**",
-        options=list(CATEGORIES.keys()),
-        format_func=lambda k: CATEGORIES[k]["short"],
-        captions=[
-            "Chips, hog fuel, biomass energy",
-            "CLT / NLT mass timber feedstock",
-            "Dimensional lumber — 2×4, 2×6…",
-            "Glulam beams, premium appearance",
-            "Veneer, specialty & export products",
-        ],
-        key="cat_radio",
-    )
-    cat = CATEGORIES[cat_key]
-    prefix = cat_key
-    vol_col = f"{prefix}_vol_expanded"
-    raw_col = f"{prefix}_vol"
-    cnt_col = f"{prefix}_count"
+        st.divider()
+        st.radio(
+            "**Timber size class**",
+            options=list(CATEGORIES.keys()),
+            format_func=lambda k: CATEGORIES[k]["short"],
+            captions=[
+                "Chips, hog fuel, biomass energy",
+                "CLT / NLT mass timber feedstock",
+                "Dimensional lumber — 2×4, 2×6…",
+                "Glulam beams, premium appearance",
+                "Veneer, specialty & export products",
+            ],
+            key="cat_radio",
+        )
+        st.radio(
+            "**Value estimate**",
+            options=list(TIER_LABELS.keys()),
+            format_func=lambda k: TIER_LABELS[k],
+            captions=[
+                "Value at the stump",
+                "Delivered to the mill",
+                "Finished product",
+            ],
+            key="tier_radio",
+            help="Pacific Northwest benchmark prices — not a formal appraisal.",
+        )
+        st.radio(
+            "**Land ownership**",
+            options=list(FISCAL.keys()),
+            format_func=lambda k: FISCAL[k]["label"],
+            captions=[
+                "All plots, colored by owner",
+                "Gifford Pinchot NF — SRS / PILT",
+                "Yakama Nation — trust land",
+                "Corporate & private — taxable",
+                "DNR trust — state school funds",
+            ],
+            key="fiscal_radio",
+        )
+        st.checkbox(
+            "Exclude wilderness & reserved areas",
+            key="reserved_cb",
+            help="Removes plots in designated wilderness and other reserved areas "
+                 "where harvest is prohibited.",
+        )
 
-    st.divider()
+    # Read the current filter selections (valid on every page via session_state).
+    cat_key       = st.session_state.cat_radio
+    cat           = CATEGORIES[cat_key]
+    vol_col       = f"{cat_key}_vol_expanded"
+    raw_col       = f"{cat_key}_vol"
+    cnt_col       = f"{cat_key}_count"
+    price_tier    = st.session_state.tier_radio
+    fiscal_filter = st.session_state.fiscal_radio
+    exclude_reserved = st.session_state.reserved_cb
 
-    price_tier = st.radio(
-        "**Value Estimate Tier**",
-        options=list(TIER_LABELS.keys()),
-        format_func=lambda k: TIER_LABELS[k],
-        captions=[
-            "Landowner value before harvest costs",
-            "Delivered to the processing facility",
-            "Finished lumber or panel market value",
-        ],
-        key="tier_radio",
-        help="Prices are Pacific Northwest industry benchmarks — not a formal appraisal.",
-    )
+    # Map-page summary metrics
+    if section == "🗺️ Where the Timber Is":
+        st.divider()
+        fdf = df.copy()
+        if fiscal_filter != "all":
+            fdf = fdf[fdf["fiscal_cat"] == fiscal_filter]
+        if exclude_reserved:
+            fdf = fdf[fdf["reserved"] == 0]
 
-    st.divider()
+        vol_expanded = fdf[vol_col].sum()
+        n_plots = int((fdf[vol_col] > 0).sum())
+        lo, hi, tier_unit = cat["prices"][price_tier]
 
-    fiscal_filter = st.radio(
-        "**Land Ownership**",
-        options=list(FISCAL.keys()),
-        format_func=lambda k: FISCAL[k]["label"],
-        captions=[
-            "All plots, colored by ownership type",
-            "Gifford Pinchot NF — SRS / PILT dependent",
-            "Yakama Nation — tribal trust land",
-            "Corporate & private — on the tax rolls",
-            "DNR trust — revenue to state school funds",
-        ],
-        key="fiscal_radio",
-    )
-
-    exclude_reserved = st.checkbox(
-        "Exclude wilderness & reserved areas",
-        key="reserved_cb",
-        help="Removes plots inside designated wilderness, national park wilderness, "
-             "and other congressionally reserved areas where harvest is prohibited.",
-    )
-
-    st.divider()
-
-    # Compute filtered subset for sidebar metrics
-    fdf = df.copy()
-    if fiscal_filter != "all":
-        fdf = fdf[fdf["fiscal_cat"] == fiscal_filter]
-    if exclude_reserved:
-        fdf = fdf[fdf["reserved"] == 0]
-
-    vol_expanded = fdf[vol_col].sum()
-    n_plots = int((fdf[vol_col] > 0).sum())
-
-    lo, hi, tier_unit = cat["prices"][price_tier]
-    val_lo = vol_expanded * lo / 1e6
-    val_hi = vol_expanded * hi / 1e6
-
-    st.metric(
-        "TPA-Expanded Volume",
-        f"{vol_expanded:,.0f} ft³",
-        help="VOLCFGRS × TPA_UNADJ — scales sample trees to per-acre representation. "
-             f"Showing: {FISCAL[fiscal_filter]['label']}.",
-    )
-    st.metric(
-        f"Est. Value — {TIER_LABELS[price_tier]}",
-        f"${val_lo:,.1f}M – ${val_hi:,.1f}M",
-        help=f"{tier_unit}. Benchmark: ${lo}–${hi}/ft³.",
-    )
-    eq_count = vol_expanded * cat["equiv_factor"]
-    st.metric("That's roughly...", f"{eq_count:,.0f} {cat['equiv_label']}")
-    st.metric("Plots shown", f"{n_plots:,} of {len(df):,}")
+        st.metric(
+            "Timber volume (this selection)",
+            f"{vol_expanded:,.0f} ft³",
+            help="Trees-per-acre-expanded cubic feet for the size class and ownership selected above.",
+        )
+        st.metric(
+            f"Estimated value — {TIER_LABELS[price_tier]}",
+            f"${vol_expanded * lo / 1e6:,.1f}M – ${vol_expanded * hi / 1e6:,.1f}M",
+            help=f"{tier_unit}. Benchmark: ${lo}–${hi}/ft³. Illustrative, not an appraisal.",
+        )
+        st.metric("Plots shown", f"{n_plots:,} of {len(df):,}")
 
     st.divider()
     st.caption(
-        "Prices are Pacific Northwest industry benchmarks.  \n"
-        "Not a formal appraisal.  \n\n"
-        "Data: USDA Forest Service FIA Datamart — WA_CSV.  \n"
+        "Data: USDA Forest Service FIA Datamart.  \n"
         "Analysis: Open Gorge / SkamaniaDispatch."
     )
 
@@ -438,46 +451,100 @@ federal_df = df[df["fiscal_cat"] == "federal"]
 if exclude_reserved:
     federal_df = federal_df[federal_df["reserved"] == 0]
 
-# ── Terminal 2 haul distance helpers ─────────────────────────────────────────
-T2_LAT = 45.548    # Portside Terminal 2, Port of Portland
-T2_LON = -122.764
+def _altair_fallback_map(
+    pts: pd.DataFrame,
+    *,
+    color: alt.Color,
+    size_field: str,
+    tooltip: list,
+    height: int = 560,
+    towns: pd.DataFrame | None = None,
+    markers: pd.DataFrame | None = None,
+    marker_color: str = "#dc1e1e",
+) -> alt.LayerChart:
+    """Lightweight lon/lat scatter used when pydeck is unavailable (stlite web build).
 
-def _haversine_miles(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-    R = 3958.8
-    p1, p2 = math.radians(lat1), math.radians(lat2)
-    dp = math.radians(lat2 - lat1)
-    dl = math.radians(lon2 - lon1)
-    a = math.sin(dp / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
-    return 2 * R * math.asin(math.sqrt(a))
+    Not a slippy basemap — but it preserves the spatial distribution, ownership/distance
+    coloring, and volume sizing that carry the analytical point. Works purely client-side
+    in stlite with no extra packages.
 
-def _dist_color(d: float) -> list:
-    if d < 50:
-        return [34, 139, 34, 210]     # green — optimal
-    elif d < 75:
-        return [255, 165, 0, 210]     # amber — viable
-    elif d < 100:
-        return [220, 80, 20, 210]     # orange-red — marginal
-    else:
-        return [180, 40, 40, 210]     # red — out of range
+    Geography is drawn to true scale: the chart width is derived from the height so that
+    one ground-mile east equals one ground-mile north, applying the cos(latitude)
+    correction (a degree of longitude is only ~0.70x a degree of latitude at ~46°N).
+    """
+    # Standardize every layer onto LON/LAT columns so they share one scale + domain.
+    town_pts = marker_pts = None
+    all_lon, all_lat = list(pts["LON"]), list(pts["LAT"])
+    if towns is not None:
+        town_pts = towns.rename(columns={"lon": "LON", "lat": "LAT"})
+        all_lon += list(town_pts["LON"]); all_lat += list(town_pts["LAT"])
+    if markers is not None:
+        marker_pts = markers.rename(columns={"lon": "LON", "lat": "LAT"})
+        all_lon += list(marker_pts["LON"]); all_lat += list(marker_pts["LAT"])
 
-# ── Main tabs ─────────────────────────────────────────────────────────────────
-tab_brief, tab_map, tab_scenario, tab_t2, tab_fp, tab_faq = st.tabs([
-    "📋 Briefing",
-    "📍 Map & Analysis",
-    "💰 Federal Revenue Scenario",
-    "🏗️ Terminal 2 Opportunity",
-    "🌊 Forest Practices",
-    "❓ FAQ",
-])
+    lon_min, lon_max = min(all_lon), max(all_lon)
+    lat_min, lat_max = min(all_lat), max(all_lat)
+    lon_pad = (lon_max - lon_min) * 0.05 or 0.02
+    lat_pad = (lat_max - lat_min) * 0.05 or 0.02
+    lon_min -= lon_pad; lon_max += lon_pad
+    lat_min -= lat_pad; lat_max += lat_pad
+
+    dlon, dlat = lon_max - lon_min, lat_max - lat_min
+    phi = math.radians((lat_min + lat_max) / 2)
+    width = int(max(240, min(1000, height * (dlon / dlat) * math.cos(phi))))
+
+    x = alt.X("LON:Q", title=None, axis=alt.Axis(format=".2f", grid=True),
+              scale=alt.Scale(domain=[lon_min, lon_max], nice=False, zero=False))
+    y = alt.Y("LAT:Q", title=None, axis=alt.Axis(format=".2f", grid=True),
+              scale=alt.Scale(domain=[lat_min, lat_max], nice=False, zero=False))
+
+    layers = [
+        alt.Chart(pts)
+        .mark_circle(opacity=0.65, stroke="#ffffff", strokeWidth=0.3)
+        .encode(
+            x=x, y=y,
+            size=alt.Size(f"{size_field}:Q", legend=None, scale=alt.Scale(range=[8, 320])),
+            color=color,
+            tooltip=tooltip,
+        )
+    ]
+    if town_pts is not None:
+        layers.append(
+            alt.Chart(town_pts).mark_point(
+                shape="triangle", size=60, filled=True, color="#333333"
+            ).encode(x=x, y=y, tooltip=alt.Tooltip("name:N", title="Town"))
+        )
+        layers.append(
+            alt.Chart(town_pts).mark_text(
+                dy=-9, fontSize=9, color="#333333"
+            ).encode(x=x, y=y, text="name:N")
+        )
+    if marker_pts is not None:
+        layers.append(
+            alt.Chart(marker_pts).mark_point(
+                shape="diamond", size=200, filled=True, color=marker_color,
+                stroke="#7a0000", strokeWidth=1.5,
+            ).encode(x=x, y=y, tooltip=alt.Tooltip("name:N", title="Location"))
+        )
+    return alt.layer(*layers).properties(width=width, height=height)
+
+# ── Sections (rendered based on the persisted sidebar nav) ────────────────────
 
 # ════════════════════════════════════════════════════════════════════════════
-with tab_brief:
-    st.markdown("## 📋 Briefing — The Bottom Line")
+if section == "🏔️ Overview":
+    st.markdown("## The Balancing Act, in One Screen")
+    st.markdown(
+        "Skamania County is caught between two governments at once. The **federal** government "
+        "owns most of the county's forest and pays the county in place of property tax — but "
+        "those payments keep lapsing. The **state** is tightening logging rules on the private "
+        "land that *does* pay tax. And the county's schools are the ones feeling it. "
+        "No single fix solves this; the point of this tool is to show the real numbers behind "
+        "each piece so the tradeoffs can be discussed plainly."
+    )
     st.caption(
-        "A one-screen summary for commissioners, district staff, and residents following the "
-        "BOCC ↔ Forest Service conversation. Every figure traces to a source. "
-        "Figures from the meeting record are marked *pending written confirmation*. "
-        "Assumptions behind the revenue math are adjustable in the **Federal Revenue Scenario** tab."
+        "Built for commissioners, district staff, and residents following the county ↔ Forest "
+        "Service conversation. Every figure traces to a source; numbers from the June 2026 "
+        "meeting record are marked *pending written confirmation*."
     )
 
     # Shared computations (defaults: $300/MBF blended stumpage, 50% Skamania share of GP receipts)
@@ -496,6 +563,61 @@ with tab_brief:
 
     _br_2030_75 = _br_county_rev(GP_PROGRAM_MBF["2030 stated target"], 0.75)
     _br_2026_100 = _br_county_rev(GP_PROGRAM_MBF["2026 planned"], 1.00)
+
+    # ── The balancing act, as one picture ────────────────────────────────────
+    _fed_stat1 = f"${_br_srs_avg/1e6:.1f}M/yr average, but"
+    _fed_stat2 = f"${_br_fy24/1e6:.2f}M in the FY2024 lapse (−{_br_drop_pct:.0f}%)"
+    _bal_svg = f"""
+<svg viewBox="0 0 760 392" width="100%" height="392" preserveAspectRatio="xMidYMid meet"
+     xmlns="http://www.w3.org/2000/svg"
+     font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif">
+  <!-- Pressure 1: Federal -->
+  <rect x="12" y="8" width="230" height="92" rx="8" fill="#eaf1fb" stroke="#1e64be" stroke-width="1.5"/>
+  <text x="127" y="30" text-anchor="middle" font-size="14" font-weight="700" fill="#1e3a5f">FEDERAL PAYMENTS</text>
+  <text x="127" y="48" text-anchor="middle" font-size="11.5" fill="#41556a">shrinking &amp; unreliable</text>
+  <text x="127" y="70" text-anchor="middle" font-size="11.5" font-weight="600" fill="#1e3a5f">{_fed_stat1}</text>
+  <text x="127" y="86" text-anchor="middle" font-size="11.5" font-weight="600" fill="#1e3a5f">{_fed_stat2}</text>
+  <!-- Pressure 2: State -->
+  <rect x="265" y="8" width="230" height="92" rx="8" fill="#fdecec" stroke="#c0392b" stroke-width="1.5"/>
+  <text x="380" y="30" text-anchor="middle" font-size="14" font-weight="700" fill="#7a241a">STATE LOGGING RULES</text>
+  <text x="380" y="48" text-anchor="middle" font-size="11.5" fill="#8a4038">raising cost on taxable land</text>
+  <text x="380" y="70" text-anchor="middle" font-size="11.5" font-weight="600" fill="#7a241a">new stream buffers,</text>
+  <text x="380" y="86" text-anchor="middle" font-size="11.5" font-weight="600" fill="#7a241a">start Aug 2026</text>
+  <!-- Pressure 3: Schools -->
+  <rect x="518" y="8" width="230" height="92" rx="8" fill="#fdf3e3" stroke="#d98c1f" stroke-width="1.5"/>
+  <text x="633" y="30" text-anchor="middle" font-size="14" font-weight="700" fill="#7a5510">LOCAL SCHOOLS</text>
+  <text x="633" y="48" text-anchor="middle" font-size="11.5" fill="#8a6a2f">already cutting</text>
+  <text x="633" y="70" text-anchor="middle" font-size="11.5" font-weight="600" fill="#7a5510">2 schools closed ·</text>
+  <text x="633" y="86" text-anchor="middle" font-size="11.5" font-weight="600" fill="#7a5510">~$250K SRS shortfall</text>
+  <!-- Arrows down to the squeeze -->
+  <line x1="127" y1="100" x2="127" y2="144" stroke="#8a97a5" stroke-width="2"/>
+  <polygon points="121,144 133,144 127,151" fill="#8a97a5"/>
+  <line x1="380" y1="100" x2="380" y2="144" stroke="#8a97a5" stroke-width="2"/>
+  <polygon points="374,144 386,144 380,151" fill="#8a97a5"/>
+  <line x1="633" y1="100" x2="633" y2="144" stroke="#8a97a5" stroke-width="2"/>
+  <polygon points="627,144 639,144 633,151" fill="#8a97a5"/>
+  <!-- The squeeze -->
+  <rect x="110" y="152" width="540" height="74" rx="8" fill="#eef1f4" stroke="#5b6b7d" stroke-width="1.5"/>
+  <text x="380" y="184" text-anchor="middle" font-size="16" font-weight="700" fill="#2b3a4a">SKAMANIA COUNTY BUDGET</text>
+  <text x="380" y="208" text-anchor="middle" font-size="12" fill="#41556a">~91% of the county is federal forest — little property tax to fall back on</text>
+  <!-- Arrow to the lever -->
+  <line x1="380" y1="226" x2="380" y2="264" stroke="#8a97a5" stroke-width="2"/>
+  <polygon points="374,264 386,264 380,271" fill="#8a97a5"/>
+  <!-- The lever -->
+  <rect x="70" y="272" width="620" height="112" rx="8" fill="#e9f6ee" stroke="#2f8f5b" stroke-width="1.5"/>
+  <text x="380" y="298" text-anchor="middle" font-size="14" font-weight="700" fill="#1c5c39">THE ONE LOCAL LEVER — how federal timber gets sold</text>
+  <text x="380" y="322" text-anchor="middle" font-size="12" fill="#265f3e">Traditional timber sales send money to county schools. Stewardship &amp; Good</text>
+  <text x="380" y="340" text-anchor="middle" font-size="12" fill="#265f3e">Neighbor deals — whatever their forest-health value — mostly don't.</text>
+  <text x="380" y="366" text-anchor="middle" font-size="12" font-weight="600" fill="#1c5c39">Even the 2030 timber target falls short of past payments, so a timber push</text>
+  <text x="380" y="382" text-anchor="middle" font-size="12" font-weight="600" fill="#1c5c39">and federal payment reform are both needed — not one or the other.</text>
+</svg>
+"""
+    components.html(
+        f'<div style="font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif">{_bal_svg}</div>',
+        height=410,
+    )
+    st.caption("The three pressures converging on the county budget — each quantified in the sections below.")
+    st.divider()
 
     _k1, _k2, _k3, _k4, _k5 = st.columns(5)
     _k1.metric(
@@ -533,7 +655,7 @@ with tab_brief:
     )
 
     st.divider()
-    st.markdown("#### Three findings")
+    st.markdown("#### Three things to know")
 
     _f1, _f2, _f3 = st.columns(3)
     with _f1:
@@ -603,32 +725,37 @@ cumulative picture. This dashboard tries to.
     ])
     st.table(_room_df)
     st.caption(
-        "Revenue math assumes $300/MBF blended stumpage and a 50% Skamania share of GP receipts — "
-        "both adjustable in the Federal Revenue Scenario tab. The point of these numbers is scale, "
-        "not precision: they are order-of-magnitude anchors for a conversation, not budget forecasts."
+        "Revenue math assumes $300/MBF blended stumpage and a 50% Skamania share of Gifford "
+        "Pinchot receipts — both adjustable under **County Revenue & Timber Payments**. These "
+        "are order-of-magnitude anchors for a conversation, not budget forecasts."
     )
 
     st.divider()
     st.markdown("#### Where to go deeper")
     st.markdown(
         """
-- **💰 Federal Revenue Scenario** — the traditional-vs-stewardship mix table, the SRS replacement
-  threshold with adjustable assumptions, the full FY2010–FY2025 payment history, and the
-  longer-term FIA inventory scenario.
-- **📍 Map & Analysis** — where the timber actually is, by size class and ownership, and why
-  ~91% of it generates no property tax.
-- **🏗️ Terminal 2 Opportunity** — the Portland CLT factory opening 2028 and what a supply
-  relationship would require.
-- **🌊 Forest Practices** — the state buffer rule taking effect August 2026 and its costs
-  on the private land that *is* on the tax rolls.
-- **❓ FAQ** — including why stewardship contracts don't pay schools, and the National Scenic
-  Area Act argument commissioners are raising.
+- **💰 County Revenue & Timber Payments** — the payment history, the school-funding stakes,
+  and the traditional-sale-vs-stewardship question that decides whether logging reaches schools.
+- **🗺️ Where the Timber Is** — the county's timber by size and owner, and why ~91% of it
+  generates no property tax.
+- **🌊 State Logging Rules** — the new state stream-buffer rule (effect August 2026) and its
+  cost to the private land that *is* on the tax rolls.
+- **❓ Questions & Sources** — plain answers, including why stewardship contracts don't pay
+  schools, and where every number comes from.
         """
     )
 
 # ════════════════════════════════════════════════════════════════════════════
-with tab_map:
-    st.markdown(f"## {cat['label']}")
+if section == "🗺️ Where the Timber Is":
+    st.markdown("## Where the Timber Is — and Who Owns It")
+    st.markdown(
+        "This map shows the county's timber, broken out by tree size and by who owns the land. "
+        "The ownership split is the whole fiscal problem in one picture: the vast majority sits "
+        "on federal land that pays no property tax. Use the controls on the left to change the "
+        "tree size class, price basis, and owner."
+    )
+    st.divider()
+    st.markdown(f"### {cat['label']}")
     st.markdown(cat["desc"])
     st.markdown(f"**End uses:** {cat['end_uses']}")
     if cat["note"]:
@@ -722,7 +849,7 @@ with tab_map:
             text="label:N",
         )
 
-        st.altair_chart(bar + text_in + text_out, use_container_width=True)
+        st.altair_chart(bar + text_in + text_out, width="stretch")
 
         # Fiscal dependency callout
         federal_vol = chart_data.loc[chart_data["fiscal_cat"] == "federal", "volume"].sum()
@@ -737,35 +864,6 @@ with tab_map:
     else:
         st.info("No volume recorded for this category under the current filters.")
 
-    # Mass timber vs. conventional (only for relevant categories)
-    if cat_key in ("small_timber", "sawlog"):
-        st.divider()
-        st.markdown("#### Mass Timber vs. Conventional Sawmill")
-        st.markdown(
-            "Both markets can use this size class. The path chosen determines who captures the value uplift."
-        )
-        m1, m2 = st.columns(2)
-        with m1:
-            st.markdown("**Mass Timber Path** — CLT / NLT / Glulam")
-            mt_lo = vol_expanded * 8.0 / 1e6
-            mt_hi = vol_expanded * 12.0 / 1e6
-            st.metric("End product value", f"${mt_lo:,.1f}M – ${mt_hi:,.1f}M")
-            st.markdown(
-                "Higher value per board foot. Requires an engineered-wood plant "
-                "(nearest: Riddle, OR — ~3 hrs). Growing Pacific Northwest market. "
-                "Particularly suited to smaller-diameter second growth."
-            )
-        with m2:
-            st.markdown("**Conventional Sawmill Path** — Dimensional Lumber")
-            sw_lo = vol_expanded * 4.0 / 1e6
-            sw_hi = vol_expanded * 6.0 / 1e6
-            st.metric("Mill gate value", f"${sw_lo:,.1f}M – ${sw_hi:,.1f}M")
-            st.markdown(
-                "Established supply chain with lower processing cost. "
-                "Regional mills in Longview, Camas, and Hood River. "
-                "Commodity pricing — tracks housing-market cycles closely."
-            )
-
     # Map
     st.divider()
     if fiscal_filter == "all":
@@ -777,75 +875,109 @@ with tab_map:
         )
     st.markdown(f"**Map — FIA Sample Plots:** {map_note} White markers are towns.")
 
-    fia_layer = pdk.Layer(
-        "ScatterplotLayer",
-        data=map_df,
-        get_position=["LON", "LAT"],
-        get_radius="_radius",
-        get_fill_color="_color",
-        pickable=True,
-        auto_highlight=True,
-    )
-    town_dot_layer = pdk.Layer(
-        "ScatterplotLayer",
-        data=TOWNS,
-        get_position=["lon", "lat"],
-        get_radius=400,
-        get_fill_color=[255, 255, 255, 220],
-        get_line_color=[80, 80, 80, 255],
-        stroked=True,
-        line_width_min_pixels=1,
-        pickable=False,
-    )
-    town_label_layer = pdk.Layer(
-        "TextLayer",
-        data=TOWNS,
-        get_position=["lon", "lat"],
-        get_text="name",
-        get_size=13,
-        get_color=[30, 30, 30, 255],
-        get_background_color=[255, 255, 255, 200],
-        background=True,
-        get_padding=[3, 2, 3, 2],
-        get_alignment_baseline="'bottom'",
-        get_text_anchor="'middle'",
-        get_pixel_offset=[0, -10],
-        billboard=True,
-        pickable=False,
-    )
+    if HAS_PYDECK:
+        fia_layer = pdk.Layer(
+            "ScatterplotLayer",
+            data=map_df,
+            get_position=["LON", "LAT"],
+            get_radius="_radius",
+            get_fill_color="_color",
+            pickable=True,
+            auto_highlight=True,
+        )
+        town_dot_layer = pdk.Layer(
+            "ScatterplotLayer",
+            data=TOWNS,
+            get_position=["lon", "lat"],
+            get_radius=400,
+            get_fill_color=[255, 255, 255, 220],
+            get_line_color=[80, 80, 80, 255],
+            stroked=True,
+            line_width_min_pixels=1,
+            pickable=False,
+        )
+        town_label_layer = pdk.Layer(
+            "TextLayer",
+            data=TOWNS,
+            get_position=["lon", "lat"],
+            get_text="name",
+            get_size=13,
+            get_color=[30, 30, 30, 255],
+            get_background_color=[255, 255, 255, 200],
+            background=True,
+            get_padding=[3, 2, 3, 2],
+            get_alignment_baseline="'bottom'",
+            get_text_anchor="'middle'",
+            get_pixel_offset=[0, -10],
+            billboard=True,
+            pickable=False,
+        )
 
-    center_lat = df["LAT"].mean() if len(df) > 0 else 45.87
-    center_lon = df["LON"].mean() if len(df) > 0 else -121.9
-    view_state = pdk.ViewState(latitude=center_lat, longitude=center_lon, zoom=9, pitch=0)
+        center_lat = df["LAT"].mean() if len(df) > 0 else 45.87
+        center_lon = df["LON"].mean() if len(df) > 0 else -121.9
+        view_state = pdk.ViewState(latitude=center_lat, longitude=center_lon, zoom=9, pitch=0)
 
-    tooltip = {
-        "html": (
-            f"<b>FIA Plot</b><br/>"
-            f"<b>Ownership:</b> {{own_label}}<br/>"
-            f"<b>Fiscal:</b> {{fiscal_cat}}<br/>"
-            f"<b>Wilderness:</b> {{reserved}}<br/>"
-            f"<b>{cat['short']} vol (expanded):</b> {{{vol_col}:.1f}} ft³<br/>"
-            f"<b>Raw plot vol:</b> {{{raw_col}:.1f}} ft³<br/>"
-            f"<b>Trees sampled:</b> {{{cnt_col}}}<br/>"
-            f"<b>Coords:</b> {{LAT:.4f}}, {{LON:.4f}}"
-        ),
-        "style": {
-            "backgroundColor": "#1e3a2f",
-            "color": "#d4edda",
-            "fontSize": "13px",
-            "padding": "8px 10px",
-            "borderRadius": "4px",
-            "border": "1px solid #52b788",
-        },
-    }
+        tooltip = {
+            "html": (
+                f"<b>FIA Plot</b><br/>"
+                f"<b>Ownership:</b> {{own_label}}<br/>"
+                f"<b>Fiscal:</b> {{fiscal_cat}}<br/>"
+                f"<b>Wilderness:</b> {{reserved}}<br/>"
+                f"<b>{cat['short']} vol (expanded):</b> {{{vol_col}:.1f}} ft³<br/>"
+                f"<b>Raw plot vol:</b> {{{raw_col}:.1f}} ft³<br/>"
+                f"<b>Trees sampled:</b> {{{cnt_col}}}<br/>"
+                f"<b>Coords:</b> {{LAT:.4f}}, {{LON:.4f}}"
+            ),
+            "style": {
+                "backgroundColor": "#1e3a2f",
+                "color": "#d4edda",
+                "fontSize": "13px",
+                "padding": "8px 10px",
+                "borderRadius": "4px",
+                "border": "1px solid #52b788",
+            },
+        }
 
-    deck = pdk.Deck(
-        layers=[fia_layer, town_dot_layer, town_label_layer],
-        initial_view_state=view_state,
-        tooltip=tooltip,
-        map_style="https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
-    )
-    st.pydeck_chart(deck, use_container_width=True)
+        deck = pdk.Deck(
+            layers=[fia_layer, town_dot_layer, town_label_layer],
+            initial_view_state=view_state,
+            tooltip=tooltip,
+            map_style="https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+        )
+        st.pydeck_chart(deck, width="stretch")
+    else:
+        # stlite / web build: pydeck unavailable — Altair lon/lat scatter fallback.
+        _fb = map_df.copy()
+        _fb_color = alt.Color(
+            "fiscal_cat:N",
+            scale=alt.Scale(
+                domain=[k for k in FISCAL if k != "all"],
+                range=[FISCAL[k]["hex"] for k in FISCAL if k != "all"],
+            ),
+            legend=alt.Legend(title="Ownership", orient="bottom"),
+        )
+        st.altair_chart(
+            _altair_fallback_map(
+                _fb,
+                color=_fb_color,
+                size_field=vol_col,
+                tooltip=[
+                    alt.Tooltip("own_label:N", title="Ownership"),
+                    alt.Tooltip("fiscal_cat:N", title="Fiscal"),
+                    alt.Tooltip(f"{vol_col}:Q", title=f"{cat['short']} vol (ft³)", format=",.0f"),
+                    alt.Tooltip("LAT:Q", title="Lat", format=".3f"),
+                    alt.Tooltip("LON:Q", title="Lon", format=".3f"),
+                ],
+                towns=TOWNS,
+                height=600,
+            ),
+            width="content",
+        )
+        st.caption(
+            "🗺️ Simplified map (web version): points plotted by longitude/latitude, colored by "
+            "ownership and sized by volume. Triangles mark towns. The full interactive basemap "
+            "with pan/zoom is available in the desktop version of this dashboard."
+        )
 
     # Map legend when in "all" mode
     if fiscal_filter == "all":
@@ -866,7 +998,7 @@ with tab_map:
         disp.columns = ["Plot CN", "Lat", "Lon", "Ownership", "Fiscal Cat", "Reserved",
                         "Expanded Vol (ft³)", "Raw Vol (ft³)", "Trees"]
         disp = disp.sort_values("Expanded Vol (ft³)", ascending=False).reset_index(drop=True)
-        st.dataframe(disp, use_container_width=True)
+        st.dataframe(disp, width="stretch")
 
     # Expert methodology
     with st.expander("Expert Methodology — For University Researchers"):
@@ -968,154 +1100,16 @@ mill gate pricing, which requires a negotiated stewardship contract structure.
         )
 
 # ════════════════════════════════════════════════════════════════════════════
-with tab_scenario:
-    st.markdown("## Federal Revenue Scenario — The 25% Fund")
-    st.markdown(
-        """
-Before the Secure Rural Schools Act, counties with National Forest land received **25% of gross
-timber sale receipts** from harvests within their borders — the "25% Fund." When federal harvest
-volumes collapsed in the 1990s (spotted owl and related litigation), Congress replaced that
-revenue stream with SRS direct payments that are subject to reauthorization.
 
-This tool estimates what Skamania County *would receive* under the 25% Fund formula if the
-Gifford Pinchot National Forest were actively selling timber at current stumpage prices.
-It is a **policy scenario**, not a harvest plan.
-        """
-    )
-
-    # ── Part 1: The actual GP program & the mix question ─────────────────────
-    st.divider()
-    st.markdown("### Part 1 — The Actual Program: Traditional Sales vs. Stewardship")
-    st.markdown(
-        """
-At the **June 16 and June 30, 2026 BOCC meetings**, commissioners pressed the Gifford Pinchot
-to make traditional timber sales at least **50% of the forest's program, with 75% as the goal**
-("I want the floor to be 50 percent"). The distinction matters because of how the money moves:
-
-| Contract vehicle | Where the timber value goes | County schools & roads receive |
-|---|---|---|
-| **Traditional timber sale** | Purchaser pays USFS → gross receipts | **25% of receipts** via the 25% Fund |
-| **Stewardship contract** | Timber value traded against restoration work (goods-for-services) | **Little to none** — receipts are offset, not distributed |
-| **Good Neighbor Authority (GNA)** | Receipts retained for further restoration under the agreement | **None distributed to counties** |
-
-Whatever the forest-health merits of each vehicle — and stewardship work has real merits —
-the *vehicle choice* determines whether a school district sees a dollar. That is the entire
-substance of the "floor" demand.
-        """
-    )
-
-    _p1, _p2, _p3, _p4 = st.columns(4)
-    _p1.metric("Recent years (avg)", "~32M BF/yr", help="GP-wide planned volume, all contract vehicles.")
-    _p2.metric("2026 planned", "36M BF", help="GP-wide planned volume for 2026.")
-    _p3.metric("2030 stated target", "68M BF", help="GP-wide target stated by Forest Service staff.")
-    _p4.metric("Thinning program", f"{GP_THINNING_ACRES_YR:,} ac/yr",
-               help="Forest-wide thinning program, stated 20–30 year horizon.")
-    st.caption(
-        "Program figures as shared by Forest Service staff at the June 30, 2026 BOCC meeting. "
-        "Meeting record — **pending written confirmation** from the Gifford Pinchot."
-    )
-
-    _mx1, _mx2 = st.columns(2)
-    with _mx1:
-        _mx_price = st.slider(
-            "Blended stumpage ($/MBF)",
-            min_value=100, max_value=600, value=300, step=25,
-            help="Blended across size classes and species. Westside federal stumpage varies "
-                 "widely with sale design; recent regional comparables run roughly $200–$450/MBF. "
-                 "This is the single most sensitive assumption in the table below.",
-        )
-    with _mx2:
-        _mx_share_pct = st.slider(
-            "Skamania share of GP 25% Fund distribution (%)",
-            min_value=30, max_value=70, value=50, step=5,
-            help="The 25% Fund distributes receipts to counties in proportion to NF acreage "
-                 "within each county. ASR reports list 532,288 Skamania acres in the GP — "
-                 "the largest county share. Adjust if you have the precise distribution percentage.",
-        )
-    _mx_share = _mx_share_pct / 100
-
-    st.markdown("##### County revenue by program level and traditional-sale share")
-    _mx_rows = []
-    for _lvl_name, _lvl_mbf in GP_PROGRAM_MBF.items():
-        _row = {"GP program level": f"{_lvl_name} — {_lvl_mbf/1000:.0f}M BF/yr"}
-        for _trad in (0.25, 0.50, 0.75, 1.00):
-            _rev = _lvl_mbf * _trad * _mx_price * 0.25 * _mx_share
-            _row[f"{int(_trad*100)}% traditional"] = f"${_rev/1e6:.2f}M/yr"
-        _mx_rows.append(_row)
-    st.dataframe(pd.DataFrame(_mx_rows), use_container_width=True, hide_index=True)
-    st.caption(
-        "County revenue = GP volume × traditional share × blended stumpage × 25% Fund × Skamania share. "
-        "**50% traditional** is the commissioners' stated floor; **75%** is the stated goal. "
-        "The 25% Fund pays a 7-year rolling average of receipts, so a program ramp-up reaches "
-        "county budgets gradually — full effect only after several sustained years."
-    )
-
-    # SRS replacement threshold — the reverse calculation
-    _mx_srs_avg = sum(
-        r["amount"] for r in SRS_PAYMENTS if r["type"] == "SRS Formula"
-    ) / max(sum(1 for r in SRS_PAYMENTS if r["type"] == "SRS Formula"), 1)
-    _mx_srs_fy25 = next(r["amount"] for r in SRS_PAYMENTS if r["fy"] == 2025)
-    _mx_bf_fy25  = _mx_srs_fy25 / (0.25 * _mx_share * _mx_price)   # MBF at 100% traditional
-    _mx_bf_avg   = _mx_srs_avg  / (0.25 * _mx_share * _mx_price)
-    _mx_2030_75  = GP_PROGRAM_MBF["2030 stated target"] * 0.75 * _mx_price * 0.25 * _mx_share
-    _mx_gap_75   = _mx_srs_avg - _mx_2030_75
-
-    st.markdown("##### The SRS replacement threshold")
-    _t1, _t2, _t3 = st.columns(3)
-    _t1.metric(
-        "To replace FY2025 SRS ($2.47M)",
-        f"~{_mx_bf_fy25/1000:.0f}M BF/yr",
-        help="GP-wide volume needed at 100% traditional sales and the slider assumptions above. "
-             "Compare: the stated 2030 target is 68M BF.",
-    )
-    _t2.metric(
-        "To match SRS-formula average",
-        f"~{_mx_bf_avg/1000:.0f}M BF/yr",
-        help=f"Matching the ${_mx_srs_avg/1e6:.2f}M/yr average of FY2013–FY2025 formula years.",
-    )
-    _t3.metric(
-        "2030 target @ 75% traditional",
-        f"${_mx_2030_75/1e6:.2f}M/yr",
-        delta=f"{(_mx_2030_75 - _mx_srs_avg)/1e6:+.2f}M vs SRS avg",
-        help="What the commissioners' aspirational mix delivers at the stated 2030 volume target.",
-    )
-
-    _s_gap75 = f"${abs(_mx_gap_75)/1e6:.2f}M"
-    if _mx_gap_75 > 0:
-        st.info(
-            f"**The arithmetic behind the strategy question:** at these assumptions, even the "
-            f"Forest Service's 2030 target at the commissioners' 75% traditional goal falls about "
-            f"**{_s_gap75}/yr short** of the SRS-formula average. This is not an argument against "
-            f"the timber push — it is the reason the timber push and the **SRS/PILT recombination** "
-            f"strategy (raised at the June 30 meeting after EDC Director Waters' conversation with "
-            f"Sen. Merkley) are complements rather than alternatives. If even success falls short, "
-            f"structural payment reform isn't just advocacy — it's arithmetic.",
-            icon="🧮",
-        )
-    else:
-        st.success(
-            f"At these assumptions, the 2030 target at a 75% traditional mix would **exceed** the "
-            f"SRS-formula average by about {_s_gap75}/yr. Note this requires both the volume ramp "
-            f"(68M BF, nearly double current) *and* the mix shift to materialize, and the 7-year "
-            f"rolling average delays the full effect."
-        )
-
-    st.markdown(
-        """
-**A structural option on the table:** at the June 30 meeting, the Forest Supervisor offered to
-connect Skamania with a **California county that built a master stewardship agreement program
-from scratch**. A master agreement doesn't by itself change the 25% Fund math — but it can give
-the county a seat in designing sale structure, local-hire terms, and the traditional/stewardship
-mix over a multi-year horizon rather than sale-by-sale. The county's homework before that
-conversation: know exactly which revenue outcome it needs the agreement to protect
-(the mix table above is that number).
-        """
-    )
+def _fia_model():
+    """Optional deeper model shown in the County Revenue expander: what the FIA
+    land base could support if actively harvested. Superseded for day-to-day use by
+    the Forest Service program figures above, but kept for feasibility-testing."""
 
     st.divider()
-    st.markdown("### Part 2 — Longer-Term Potential: FIA Inventory Scenario")
+    st.markdown("#### The FIA inventory model")
     st.markdown(
-        "Part 1 works from the Forest Service's actual program numbers. This section asks a "
+        "The program figures shown on the main page work from the Forest Service's actual "
         "different question: what could the land base itself support, using FIA inventory data? "
         "Useful for testing whether the 2030 target is physically plausible — with the caveats below."
     )
@@ -1209,7 +1203,7 @@ conversation: know exactly which revenue outcome it needs the agreement to prote
     disp_scen["Harvest/yr (MBF)"]      = disp_scen["Harvest/yr (MBF)"].map("{:,.1f}".format)
     disp_scen["County 25% — Low"]      = disp_scen["County 25% — Low"].map("${:,.0f}".format)
     disp_scen["County 25% — High"]     = disp_scen["County 25% — High"].map("${:,.0f}".format)
-    st.dataframe(disp_scen, use_container_width=True, hide_index=True)
+    st.dataframe(disp_scen, width="stretch", hide_index=True)
     st.caption(
         "MBF = thousand board feet (1 ft³ ≈ 12 board feet). "
         "County-wide volume is the FIA mean per-acre density × entered federal acreage — "
@@ -1317,9 +1311,83 @@ conversation: know exactly which revenue outcome it needs the agreement to prote
             f"well above treatment cost."
         )
 
+    st.divider()
+    st.markdown("#### How This Compares to the 25% Fund Scenario")
+    st.markdown(
+        "Use the historical chart above to pick a reference year, or enter a custom amount "
+        "to see how the 25% Fund scenario compares to actual SRS payments."
+    )
+    srs_actual = st.number_input(
+        "Reference SRS payment ($/year)",
+        min_value=0,
+        value=2_467_843,
+        step=100_000,
+        format="%d",
+        help="Default: FY2025 confirmed SRS payment ($2,467,842.84). "
+             "Change to any year from the historical chart to compare.",
+    )
+    if srs_actual > 0:
+        mid_scenario = (total_county_lo + total_county_hi) / 2
+        delta = mid_scenario - srs_actual
+        delta_pct = delta / srs_actual * 100
+        d1, d2 = st.columns(2)
+        d1.metric(
+            "25% Fund scenario (midpoint)",
+            f"${mid_scenario:,.0f}/yr",
+            delta=f"{'+'if delta>=0 else ''}{delta:,.0f} vs SRS ({delta_pct:+.0f}%)",
+            delta_color="normal",
+        )
+        d2.metric(
+            "SRS payment entered",
+            f"${srs_actual:,.0f}/yr",
+        )
+        _s_delta = f"${abs(delta):,.0f}"
+        if delta > 0:
+            st.success(
+                f"At {harvest_rate:.1f}%/yr harvest, the 25% Fund would generate roughly "
+                f"**{_s_delta}/yr more** than the SRS payment entered. "
+                f"This is the revenue foregone by structurally replacing harvest receipts with a grant program."
+            )
+        else:
+            st.warning(
+                f"At {harvest_rate:.1f}%/yr harvest, the 25% Fund scenario yields roughly "
+                f"**{_s_delta}/yr less** than the SRS payment entered — meaning Congress's "
+                f"SRS formula has been more generous than active harvest would have generated at this rate. "
+                f"Try increasing the harvest rate to find the breakeven."
+            )
+
+    st.divider()
+    st.markdown(
+        """
+**Important caveats**
+- Federal inventory in this scenario includes all FIA measurement cycles, not just the most recent.
+  Actual harvestable volume would require current-cycle analysis with EVALID filtering.
+- "Sustainable yield" depends on growth rates, age class distribution, and the Gifford Pinchot
+  forest plan — 2% is a planning assumption only.
+- The 25% Fund formula applies to gross receipts, which track stumpage prices at the time of sale.
+- Biomass (0–5\" trees) shows near-zero because VOLCFGRS is not recorded for sub-merchantable trees.
+- This tool is for policy illustration and public education, not for budget forecasting.
+        """
+    )
+
+if section == "💰 County Revenue & Timber Payments":
+    st.markdown("## County Revenue & Timber Payments")
+    st.markdown(
+        "**The short version.** Most of Skamania is federal forest, so instead of property "
+        "tax the county leans on federal timber payments — and those have become unreliable. "
+        "Below: what the county has actually received, what it pays for, and the one choice "
+        "(how the timber is sold) that decides whether more logging would ever reach county schools."
+    )
+    st.caption(
+        "Background: counties with National Forest land historically received 25% of timber "
+        "sale receipts (the \"25% Fund\"). When harvests collapsed in the 1990s, Congress replaced "
+        "that with Secure Rural Schools (SRS) payments — which need periodic reauthorization and "
+        "have lapsed. Full explanation under Questions & Sources."
+    )
+
     # ── Historical SRS payment chart ─────────────────────────────────────────
     st.divider()
-    st.markdown("#### Skamania County SRS & 25% Fund Payments — FY2010–FY2025")
+    st.markdown("### The Payment Record — Skamania County, FY2010–FY2025")
     st.caption(
         "Source: USDA Forest Service ASR-10-03 Final Payment Detail Reports. "
         "FY2010–2012 extracted from USFS PDF archives (per-district amounts summed). "
@@ -1382,7 +1450,7 @@ conversation: know exactly which revenue outcome it needs the agreement to prote
         )
     )
 
-    st.altair_chart(_srs_bars + _srs_text + _gap_text, use_container_width=True)
+    st.altair_chart(_srs_bars + _srs_text + _gap_text, width="stretch")
 
     # Summary callout
     _srs_confirmed = [r for r in SRS_PAYMENTS if r["amount"] > 0]
@@ -1440,416 +1508,156 @@ conversation: know exactly which revenue outcome it needs the agreement to prote
         "they land on a district that has now closed two schools."
     )
 
+    # ── Part 1: The actual GP program & the mix question ─────────────────────
     st.divider()
-    st.markdown("#### How This Compares to the 25% Fund Scenario")
+    st.markdown("### The Mix Question — Traditional Sales vs. Stewardship")
     st.markdown(
-        "Use the historical chart above to pick a reference year, or enter a custom amount "
-        "to see how the 25% Fund scenario compares to actual SRS payments."
+        """
+At the **June 16 and June 30, 2026 BOCC meetings**, commissioners pressed the Gifford Pinchot
+to make traditional timber sales at least **50% of the forest's program, with 75% as the goal**
+("I want the floor to be 50 percent"). The distinction matters because of how the money moves:
+
+| Contract vehicle | Where the timber value goes | County schools & roads receive |
+|---|---|---|
+| **Traditional timber sale** | Purchaser pays USFS → gross receipts | **25% of receipts** via the 25% Fund |
+| **Stewardship contract** | Timber value traded against restoration work (goods-for-services) | **Little to none** — receipts are offset, not distributed |
+| **Good Neighbor Authority (GNA)** | Receipts retained for further restoration under the agreement | **None distributed to counties** |
+
+Whatever the forest-health merits of each vehicle — and stewardship work has real merits —
+the *vehicle choice* determines whether a school district sees a dollar. That is the entire
+substance of the "floor" demand.
+        """
     )
-    srs_actual = st.number_input(
-        "Reference SRS payment ($/year)",
-        min_value=0,
-        value=2_467_843,
-        step=100_000,
-        format="%d",
-        help="Default: FY2025 confirmed SRS payment ($2,467,842.84). "
-             "Change to any year from the historical chart to compare.",
+
+    _p1, _p2, _p3, _p4 = st.columns(4)
+    _p1.metric("Recent years (avg)", "~32M BF/yr", help="GP-wide planned volume, all contract vehicles.")
+    _p2.metric("2026 planned", "36M BF", help="GP-wide planned volume for 2026.")
+    _p3.metric("2030 stated target", "68M BF", help="GP-wide target stated by Forest Service staff.")
+    _p4.metric("Thinning program", f"{GP_THINNING_ACRES_YR:,} ac/yr",
+               help="Forest-wide thinning program, stated 20–30 year horizon.")
+    st.caption(
+        "Program figures as shared by Forest Service staff at the June 30, 2026 BOCC meeting. "
+        "Meeting record — **pending written confirmation** from the Gifford Pinchot."
     )
-    if srs_actual > 0:
-        mid_scenario = (total_county_lo + total_county_hi) / 2
-        delta = mid_scenario - srs_actual
-        delta_pct = delta / srs_actual * 100
-        d1, d2 = st.columns(2)
-        d1.metric(
-            "25% Fund scenario (midpoint)",
-            f"${mid_scenario:,.0f}/yr",
-            delta=f"{'+'if delta>=0 else ''}{delta:,.0f} vs SRS ({delta_pct:+.0f}%)",
-            delta_color="normal",
+
+    _mx1, _mx2 = st.columns(2)
+    with _mx1:
+        _mx_price = st.slider(
+            "Blended stumpage ($/MBF)",
+            min_value=100, max_value=600, value=300, step=25,
+            help="Blended across size classes and species. Westside federal stumpage varies "
+                 "widely with sale design; recent regional comparables run roughly $200–$450/MBF. "
+                 "This is the single most sensitive assumption in the table below.",
         )
-        d2.metric(
-            "SRS payment entered",
-            f"${srs_actual:,.0f}/yr",
+    with _mx2:
+        _mx_share_pct = st.slider(
+            "Skamania share of GP 25% Fund distribution (%)",
+            min_value=30, max_value=70, value=50, step=5,
+            help="The 25% Fund distributes receipts to counties in proportion to NF acreage "
+                 "within each county. ASR reports list 532,288 Skamania acres in the GP — "
+                 "the largest county share. Adjust if you have the precise distribution percentage.",
         )
-        _s_delta = f"${abs(delta):,.0f}"
-        if delta > 0:
-            st.success(
-                f"At {harvest_rate:.1f}%/yr harvest, the 25% Fund would generate roughly "
-                f"**{_s_delta}/yr more** than the SRS payment entered. "
-                f"This is the revenue foregone by structurally replacing harvest receipts with a grant program."
-            )
-        else:
-            st.warning(
-                f"At {harvest_rate:.1f}%/yr harvest, the 25% Fund scenario yields roughly "
-                f"**{_s_delta}/yr less** than the SRS payment entered — meaning Congress's "
-                f"SRS formula has been more generous than active harvest would have generated at this rate. "
-                f"Try increasing the harvest rate to find the breakeven."
-            )
+    _mx_share = _mx_share_pct / 100
+
+    st.markdown("##### County revenue by program level and traditional-sale share")
+    _mx_rows = []
+    for _lvl_name, _lvl_mbf in GP_PROGRAM_MBF.items():
+        _row = {"GP program level": f"{_lvl_name} — {_lvl_mbf/1000:.0f}M BF/yr"}
+        for _trad in (0.25, 0.50, 0.75, 1.00):
+            _rev = _lvl_mbf * _trad * _mx_price * 0.25 * _mx_share
+            _row[f"{int(_trad*100)}% traditional"] = f"${_rev/1e6:.2f}M/yr"
+        _mx_rows.append(_row)
+    st.dataframe(pd.DataFrame(_mx_rows), width="stretch", hide_index=True)
+    st.caption(
+        "County revenue = GP volume × traditional share × blended stumpage × 25% Fund × Skamania share. "
+        "**50% traditional** is the commissioners' stated floor; **75%** is the stated goal. "
+        "The 25% Fund pays a 7-year rolling average of receipts, so a program ramp-up reaches "
+        "county budgets gradually — full effect only after several sustained years."
+    )
+
+    # SRS replacement threshold — the reverse calculation
+    _mx_srs_avg = sum(
+        r["amount"] for r in SRS_PAYMENTS if r["type"] == "SRS Formula"
+    ) / max(sum(1 for r in SRS_PAYMENTS if r["type"] == "SRS Formula"), 1)
+    _mx_srs_fy25 = next(r["amount"] for r in SRS_PAYMENTS if r["fy"] == 2025)
+    _mx_bf_fy25  = _mx_srs_fy25 / (0.25 * _mx_share * _mx_price)   # MBF at 100% traditional
+    _mx_bf_avg   = _mx_srs_avg  / (0.25 * _mx_share * _mx_price)
+    _mx_2030_75  = GP_PROGRAM_MBF["2030 stated target"] * 0.75 * _mx_price * 0.25 * _mx_share
+    _mx_gap_75   = _mx_srs_avg - _mx_2030_75
+
+    st.markdown("##### The SRS replacement threshold")
+    _t1, _t2, _t3 = st.columns(3)
+    _t1.metric(
+        "To replace FY2025 SRS ($2.47M)",
+        f"~{_mx_bf_fy25/1000:.0f}M BF/yr",
+        help="GP-wide volume needed at 100% traditional sales and the slider assumptions above. "
+             "Compare: the stated 2030 target is 68M BF.",
+    )
+    _t2.metric(
+        "To match SRS-formula average",
+        f"~{_mx_bf_avg/1000:.0f}M BF/yr",
+        help=f"Matching the ${_mx_srs_avg/1e6:.2f}M/yr average of FY2013–FY2025 formula years.",
+    )
+    _t3.metric(
+        "2030 target @ 75% traditional",
+        f"${_mx_2030_75/1e6:.2f}M/yr",
+        delta=f"{(_mx_2030_75 - _mx_srs_avg)/1e6:+.2f}M vs SRS avg",
+        help="What the commissioners' aspirational mix delivers at the stated 2030 volume target.",
+    )
+
+    _s_gap75 = f"${abs(_mx_gap_75)/1e6:.2f}M"
+    if _mx_gap_75 > 0:
+        st.info(
+            f"**The arithmetic behind the strategy question:** at these assumptions, even the "
+            f"Forest Service's 2030 target at the commissioners' 75% traditional goal falls about "
+            f"**{_s_gap75}/yr short** of the SRS-formula average. This is not an argument against "
+            f"the timber push — it is the reason the timber push and the **SRS/PILT recombination** "
+            f"strategy (raised at the June 30 meeting after EDC Director Waters' conversation with "
+            f"Sen. Merkley) are complements rather than alternatives. If even success falls short, "
+            f"structural payment reform isn't just advocacy — it's arithmetic.",
+            icon="🧮",
+        )
+    else:
+        st.success(
+            f"At these assumptions, the 2030 target at a 75% traditional mix would **exceed** the "
+            f"SRS-formula average by about {_s_gap75}/yr. Note this requires both the volume ramp "
+            f"(68M BF, nearly double current) *and* the mix shift to materialize, and the 7-year "
+            f"rolling average delays the full effect."
+        )
+
+    st.markdown(
+        """
+**A structural option on the table:** at the June 30 meeting, the Forest Supervisor offered to
+connect Skamania with a **California county that built a master stewardship agreement program
+from scratch**. A master agreement doesn't by itself change the 25% Fund math — but it can give
+the county a seat in designing sale structure, local-hire terms, and the traditional/stewardship
+mix over a multi-year horizon rather than sale-by-sale. The county's homework before that
+conversation: know exactly which revenue outcome it needs the agreement to protect
+(the mix table above is that number).
+        """
+    )
+
 
     st.divider()
-    st.markdown(
-        """
-**Important caveats**
-- Federal inventory in this scenario includes all FIA measurement cycles, not just the most recent.
-  Actual harvestable volume would require current-cycle analysis with EVALID filtering.
-- "Sustainable yield" depends on growth rates, age class distribution, and the Gifford Pinchot
-  forest plan — 2% is a planning assumption only.
-- The 25% Fund formula applies to gross receipts, which track stumpage prices at the time of sale.
-- Biomass (0–5\" trees) shows near-zero because VOLCFGRS is not recorded for sub-merchantable trees.
-- This tool is for policy illustration and public education, not for budget forecasting.
-        """
-    )
+    with st.expander("🔍 Deeper detail — what the land base could support (FIA model)"):
+        _fia_model()
 
 # ════════════════════════════════════════════════════════════════════════════
-with tab_t2:
-    st.markdown("## 🏗️ Terminal 2 Opportunity — Portside Mass Timber Campus")
+if section == "🌊 State Logging Rules":
+    st.markdown("## State Logging Rules — the New Stream Buffers")
     st.markdown(
-        """
-**Portside Terminal 2** is a 39-acre redevelopment at the Port of Portland transforming a former
-marine terminal into a **Mass Timber and Housing Innovation Campus.** Two anchors:
-
-- **Zaugg Timber Solutions** — CLT factory opening **early 2028**, approximately 45 miles from Stevenson
-- **University of Oregon Acoustics Lab** — opening 2027, focused on mass timber building performance
-
-This isn't a distant market. It's a door opening in roughly 18 months — and Skamania County's
-small-diameter forest stands are exactly the feedstock Zaugg will need.
-        """
+        "**The short version.** While federal payments shrink, the state is adding to the cost "
+        "of logging the private land that actually pays county tax. A new rule widens the "
+        "no-cut buffer along small non-fish streams from 50 to 75 feet, starting August 2026. "
+        "This page puts real numbers on what that means for Skamania — using the state's own "
+        "cost estimates — and sits alongside the federal payment picture, because the county "
+        "feels both at once."
     )
-
-    km1, km2, km3, km4 = st.columns(4)
-    km1.metric("Road Haul Distance", "~60–65 mi",
-               help="Road distance from Stevenson via SR-14 / I-84. Great-circle is ~47 mi, "
-                    "but SR-14 is a slow two-lane highway with log truck restrictions at key points. "
-                    "Delivered haul economics should use road distance, not as-the-crow-flies.")
-    km2.metric("Zaugg Factory Opens", "Early 2028",
-               help="~18 months from now — but NEPA for any new NF harvest takes 2–5 years. "
-                    "The conversation needs to start immediately for any Gifford Pinchot component.")
-    km3.metric("Campus Size", "39 acres",
-               help="Former marine terminal; part of the Port of Portland's Portside redevelopment.")
-    km4.metric("Target Feedstock", "5–9\" CLT logs",
-               help="Small-diameter second-growth Douglas-fir and hemlock — Skamania's most abundant size class.")
-
-    st.divider()
-
-    # ── Two-column: haul distance map + species chart ────────────────────────
-    col_map_t2, col_chart_t2 = st.columns([3, 2])
-
-    with col_map_t2:
-        st.markdown("#### Haul Distance from Terminal 2")
-        st.caption(
-            "FIA plots with small-timber volume colored by great-circle distance to "
-            "Portside Terminal 2 (Port of Portland). Red star = Terminal 2 location."
-        )
-
-        t2_df = df[df["small_timber_vol_expanded"] > 0].copy()
-        t2_df["dist_miles"] = t2_df.apply(
-            lambda r: _haversine_miles(r["LAT"], r["LON"], T2_LAT, T2_LON), axis=1
-        )
-        t2_df["_color"] = t2_df["dist_miles"].apply(_dist_color)
-        _max_st_vol = t2_df["small_timber_vol_expanded"].max() or 1.0
-        t2_df["_radius"] = (t2_df["small_timber_vol_expanded"] / _max_st_vol * 1_200).clip(lower=60)
-        t2_df["dist_label"] = t2_df["dist_miles"].apply(lambda d: f"{d:.0f} mi")
-
-        _terminal_pt = pd.DataFrame([{
-            "lat": T2_LAT, "lon": T2_LON,
-            "name": "Terminal 2\n(Port of Portland)",
-        }])
-
-        fia_t2_layer = pdk.Layer(
-            "ScatterplotLayer", data=t2_df,
-            get_position=["LON", "LAT"], get_radius="_radius",
-            get_fill_color="_color", pickable=True, auto_highlight=True,
-        )
-        terminal_dot_layer = pdk.Layer(
-            "ScatterplotLayer", data=_terminal_pt,
-            get_position=["lon", "lat"], get_radius=900,
-            get_fill_color=[220, 30, 30, 240],
-            get_line_color=[120, 0, 0, 255],
-            stroked=True, line_width_min_pixels=2,
-        )
-        terminal_label_layer = pdk.Layer(
-            "TextLayer", data=_terminal_pt,
-            get_position=["lon", "lat"], get_text="name",
-            get_size=13, get_color=[30, 30, 30, 255],
-            get_background_color=[255, 245, 200, 220],
-            background=True, get_padding=[3, 2, 3, 2],
-            get_alignment_baseline="'bottom'", get_text_anchor="'middle'",
-            get_pixel_offset=[0, -14], billboard=True,
-        )
-
-        t2_view = pdk.ViewState(latitude=45.68, longitude=-122.35, zoom=7.6, pitch=0)
-        t2_tooltip = {
-            "html": (
-                "<b>FIA Plot</b><br/>"
-                "<b>Haul distance:</b> {dist_label}<br/>"
-                "<b>Small timber vol:</b> {small_timber_vol_expanded:.0f} ft³<br/>"
-                "<b>Ownership:</b> {own_label}<br/>"
-                "<b>Fiscal:</b> {fiscal_cat}"
-            ),
-            "style": {
-                "backgroundColor": "#1a2f1a", "color": "#c8f0c8",
-                "fontSize": "13px", "padding": "8px", "borderRadius": "4px",
-            },
-        }
-        t2_deck = pdk.Deck(
-            layers=[fia_t2_layer, terminal_dot_layer, terminal_label_layer],
-            initial_view_state=t2_view,
-            tooltip=t2_tooltip,
-            map_style="https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
-        )
-        st.pydeck_chart(t2_deck, use_container_width=True)
-
-        # Legend
-        _leg_cols = st.columns(4)
-        for _lc, (_rgb, _label, _note) in zip(_leg_cols, [
-            ("34,139,34",  "< 50 mi",    "Optimal haul"),
-            ("255,165,0",  "50–75 mi",   "Viable"),
-            ("220,80,20",  "75–100 mi",  "Marginal"),
-            ("180,40,40",  "> 100 mi",   "Out of range"),
-        ]):
-            _lc.markdown(
-                f"<span style='color:rgb({_rgb});font-size:18px'>●</span> "
-                f"<small><b>{_label}</b><br/>{_note}</small>",
-                unsafe_allow_html=True,
-            )
-
-        n_opt  = int((t2_df["dist_miles"] < 50).sum())
-        n_via  = int(((t2_df["dist_miles"] >= 50) & (t2_df["dist_miles"] < 75)).sum())
-        n_mar  = int(((t2_df["dist_miles"] >= 75) & (t2_df["dist_miles"] < 100)).sum())
-        n_far  = int((t2_df["dist_miles"] >= 100).sum())
-        n_tot  = len(t2_df)
-        st.caption(
-            f"Of **{n_tot}** plots with small timber: "
-            f"**{n_opt} ({n_opt*100//n_tot}%) optimal** · "
-            f"{n_via} viable · {n_mar} marginal · {n_far} out of range"
-        )
-
-    with col_chart_t2:
-        st.markdown("#### Species Suitability for CLT")
-        st.caption("Small timber (5–9\") category — top 10 species by volume, colored by CLT suitability.")
-
-        _suit_order = ["excellent", "good", "fair", "limited", "unknown"]
-        _suit_colors = {
-            "excellent": "#1a7a1a",
-            "good":      "#4caf50",
-            "fair":      "#ff9800",
-            "limited":   "#e53935",
-            "unknown":   "#9e9e9e",
-        }
-
-        sp_df = pd.DataFrame(meta["categories"]["small_timber"]["species"]).head(10)
-
-        suit_chart = (
-            alt.Chart(sp_df)
-            .mark_bar(cornerRadiusTopRight=3, cornerRadiusBottomRight=3)
-            .encode(
-                x=alt.X("pct:Q", title="% of small-timber volume"),
-                y=alt.Y("species:N", sort="-x", title=None,
-                        axis=alt.Axis(labelLimit=160)),
-                color=alt.Color(
-                    "clt_suitability:N",
-                    scale=alt.Scale(
-                        domain=_suit_order,
-                        range=[_suit_colors[s] for s in _suit_order],
-                    ),
-                    legend=alt.Legend(title="CLT Suitability"),
-                ),
-                tooltip=[
-                    alt.Tooltip("species:N",        title="Species"),
-                    alt.Tooltip("clt_suitability:N",title="CLT Suitability"),
-                    alt.Tooltip("pct:Q",            title="% of volume",  format=".1f"),
-                    alt.Tooltip("vol_expanded:Q",   title="Vol (ft³)",    format=",.0f"),
-                ],
-            )
-            .properties(height=300)
-        )
-        st.altair_chart(suit_chart, use_container_width=True)
-
-        # Aggregate by suitability group
-        sp_all = pd.DataFrame(meta["categories"]["small_timber"]["species"])
-        _suit_grp = sp_all.groupby("clt_suitability")["pct"].sum()
-        _exc_pct  = _suit_grp.get("excellent", 0)
-        _good_pct = _suit_grp.get("good", 0)
-        _viable   = _exc_pct + _good_pct
-        _df_pct   = sp_all[sp_all["species"] == "Douglas-fir"]["pct"].sum()
-        _hem_pct  = sp_all[sp_all["species"] == "Western hemlock"]["pct"].sum()
-
-        st.metric(
-            "Excellent + Good CLT species",
-            f"{_viable:.0f}%",
-            help=f"Excellent: {_exc_pct:.1f}% (Douglas-fir) · Good: {_good_pct:.1f}% (hemlock, pine, spruce)",
-        )
-        st.caption(
-            f"**Douglas-fir ({_df_pct:.0f}%)** is Zaugg's preferred CLT feedstock. "
-            f"**Western hemlock ({_hem_pct:.0f}%)** is fully CLT-capable. "
-            f"Together, the Gifford Pinchot's small-timber class is species-compatible "
-            f"with modern CLT production lines."
-        )
-
-    # ── Multiple Goals Convergence ────────────────────────────────────────────
-    st.divider()
-    st.markdown("#### One Supply Relationship — Seven Goals Met")
-    st.markdown(
-        "Commissioner Leckie's fuel treatment instinct isn't just about fire. "
-        "The same thinning operation directed toward Portside Terminal 2 serves every "
-        "major policy objective facing Skamania County simultaneously:"
-    )
-
-    _goals = [
-        ("🔥", "Wildfire Risk Reduction",
-         "Removing 5–9\" ladder fuels from the Gifford Pinchot is the USFS "
-         "10-Year Wildfire Crisis Strategy's primary intervention. These are exactly "
-         "the trees that carry fire from the ground into the canopy.",
-         "Stewardship contracts can direct harvested material to Zaugg rather than "
-         "burning it as slash or leaving it to decay."),
-        ("🏦", "County Fiscal Health",
-         "Active timber sales on federal land generate 25% Fund receipts for Skamania "
-         "County — structurally more reliable than SRS payments subject to congressional "
-         "reauthorization cycles.",
-         "Each MBF sold at stumpage earns direct county revenue. A stewardship contract "
-         "capturing mill gate value (vs. stumpage) roughly doubles the per-acre return."),
-        ("🏠", "Housing Supply",
-         "CLT panels from Zaugg's Terminal 2 factory feed multifamily and mid-rise "
-         "construction across the Portland metro — where housing shortfalls are severe "
-         "and mass timber is policy-favored by the city and state.",
-         "Skamania's small timber becomes Portland's affordable housing panels. "
-         "One loaded log truck per day represents meaningful ongoing production."),
-        ("🌲", "Forest Health",
-         "Overcrowded second-growth stands suffer suppression mortality, bark beetle "
-         "outbreak, and drought stress. Thinning restores growing space for residual "
-         "trees, improving their climate resilience over decades.",
-         "The Gifford Pinchot's 2015 Revised Forest Plan supports restoration thinning. "
-         "This is within-plan activity, not a new policy fight."),
-        ("🌿", "Carbon & Climate",
-         "Durable CLT panels lock harvested carbon in buildings for 50–100+ years. "
-         "Thinning also reduces catastrophic wildfire risk — the single fastest way "
-         "to convert a carbon sink into a major emission source.",
-         "Mass timber buildings store more carbon per unit than concrete or steel "
-         "alternatives, and the stored carbon is verified and durable."),
-        ("👷", "Rural Workforce",
-         "Logging, trucking, and processing jobs in rural Skamania County. A stable "
-         "multi-year supply contract with Zaugg supports sustained employment rather "
-         "than boom-bust salvage cycles.",
-         "USFS stewardship contracting can require local hire and prioritize small "
-         "logging contractors — keeping more of the value in the county."),
-        ("📋", "SRS Leverage",
-         "Active, demonstrated forest management strengthens Skamania's case for SRS "
-         "reauthorization and CFLRP eligibility. Congress responds to counties with "
-         "working forest plans — not passive inventory watchers.",
-         "A Skamania–Zaugg supply agreement is a concrete exhibit in any appropriations "
-         "hearing or Forest Service funding conversation."),
-    ]
-
-    for _i in range(0, len(_goals), 2):
-        _row = _goals[_i:_i + 2]
-        _gcols = st.columns(len(_row))
-        for _gc, (_icon, _title, _how, _lever) in zip(_gcols, _row):
-            with _gc:
-                st.markdown(
-                    f"**{_icon} {_title}**\n\n"
-                    f"{_how}\n\n"
-                    f"*→ {_lever}*"
-                )
-
-    # ── Tradeoffs and constraints ──────────────────────────────────────────────
-    st.divider()
-    st.markdown("#### Tradeoffs and Constraints — What This Doesn't Show")
-    st.markdown(
-        "A credible supply proposal must account for these real costs and constraints. "
-        "Ignoring them invites opposition that will derail the effort."
-    )
-
-    _tradeoffs = [
-        ("🛣️", "Road building and habitat fragmentation",
-         "New commercial harvest typically requires road construction or improvement. "
-         "Roads are the leading cause of habitat fragmentation and stream sedimentation "
-         "in Pacific Northwest forests. Any new project needs a road plan reviewed by "
-         "USFS engineers and fisheries biologists."),
-        ("🦉", "ESA-listed species and critical habitat",
-         "Northern Spotted Owl and Marbled Murrelet critical habitat overlaps with much "
-         "of the Gifford Pinchot's small-timber stands. Section 7 consultation with USFWS "
-         "is required. Projects may need to avoid nest sites, maintain buffer zones, and "
-         "restrict activity during breeding seasons."),
-        ("🌊", "Soil compaction and stream sedimentation",
-         "Ground-based mechanized logging on the GP's steep terrain causes soil compaction "
-         "that can persist for decades. Sediment entering streams harms salmon and bull trout "
-         "habitat — both ESA-listed in Columbia River tributaries. Harvest methods and timing "
-         "are constrained by watershed analysis."),
-        ("💰", "Small-diameter economics are difficult",
-         "Stumpage for 5–9\" timber on steep NF land is frequently near zero or negative — "
-         "meaning the Forest Service may need to subsidize removal. The value capture story "
-         "depends on Zaugg paying mill gate prices via a stewardship contract, which requires "
-         "negotiation and NEPA clearance. It does not happen automatically."),
-        ("🏛️", "This dashboard is not the Gifford Pinchot's plan",
-         "The GP already has an active forest plan, ongoing stewardship contracts, and "
-         "established collaborative processes (Gifford Pinchot Task Force, etc.). "
-         "A county commissioner proposal carries weight, but it does not override the "
-         "forest plan process or substitute for the collaborative stakeholder engagement "
-         "the GP already requires."),
-        ("🌿", "Conservation alternatives not shown",
-         "Active timber harvest is one tool for county fiscal stability. This dashboard "
-         "does not show: conservation easement revenue, forest carbon credit programs "
-         "(WA Ecology's Forest Carbon Initiative, voluntary markets), expanded recreation "
-         "economy investment, or federal payment reform advocacy. A full fiscal strategy "
-         "would evaluate all of these alongside timber."),
-    ]
-
-    for _i in range(0, len(_tradeoffs), 2):
-        _row = _tradeoffs[_i:_i + 2]
-        _tcols = st.columns(len(_row))
-        for _tc, (_icon, _title, _text) in zip(_tcols, _row):
-            with _tc:
-                st.markdown(f"**{_icon} {_title}**\n\n{_text}")
-
-    # ── Timeline ──────────────────────────────────────────────────────────────
-    st.divider()
-    st.markdown("#### The Timeline Is Now — And It's Tight")
-    st.markdown(
-        """
-| Milestone | Realistic Date |
-|---|---|
-| UO Acoustics Lab opens at Portside Terminal 2 | 2027 |
-| Zaugg Timber Solutions CLT factory opens | Early 2028 |
-| **Supply agreements need to be in place** | **2026–2027** |
-| NEPA environmental review for new NF harvest (if required) | 2–5 years from initiation |
-| Stewardship contract execution (after NEPA) | 12–24 months |
-| **Start NEPA / Forest Service conversations** | **Immediately — 2025** |
-
-**The honest read on timing:** For timber supply from private or tribal land, the path to Zaugg
-is straightforward — it's a business negotiation. For **Gifford Pinchot National Forest timber**
-(90%+ of the inventory shown here), any new commercial harvest requires:
-
-1. **NEPA environmental review** — Environmental Assessment (EA) or full EIS. For significant
-   new projects on the GP, this routinely takes 3–5 years, plus potential appeals.
-2. **ESA Section 7 consultation** — required for any action that may affect listed species
-   (Northern Spotted Owl, Marbled Murrelet, bull trout, Chinook salmon).
-3. **Forest plan compatibility** — the 2015 GP Revised Forest Plan sets management standards
-   that any project must meet.
-
-A 2028 factory opening date effectively means **federal-land supply cannot be the first source**
-for Zaugg — the timeline doesn't allow it. Private, tribal, and DNR lands may be feasible
-for early supply while the longer NF project pipeline is initiated in parallel.
-
-**Suggested commissioner actions:**
-1. Request a briefing from Gifford Pinchot NF on existing NEPA-cleared projects and stewardship contracts already in the pipeline
-2. Identify which private and DNR timber owners near the county are already in CLT market conversations
-3. Contact Port of Portland / Tallwood Design Institute about Skamania County's interest
-4. Commission a feasibility study using this FIA data as the inventory baseline — particularly for the non-federal plots
-5. Engage WA State Legislature on rural economic development funding for forest infrastructure
-        """
-    )
-
-# ════════════════════════════════════════════════════════════════════════════
-with tab_fp:
-    st.markdown("## 🌊 State Forest Practices — Type Np Buffer Rule")
     st.markdown(
         """
 The Washington State Forest Practices Board voted **7–5 on November 12, 2025** to expand
-no-harvest buffer requirements along Type Np (non-fish-bearing perennial) streams on private
-and state-owned forestland in Western Washington. The rule takes effect **August 2026.**
-
-This tab uses Washington DNR stream classification data and the state's own preliminary
-Cost-Benefit Analysis (IEc, April 2025) to put specific numbers on what that rule means for
-Skamania County — alongside the federal SRS payment picture from the previous tab.
+no-harvest buffer requirements along Type Np (non-fish-bearing perennial) streams — small
+year-round streams without fish — on private and state-owned forestland in Western Washington.
 
 **This is not advocacy for or against the rule.** The rule was adopted through the state's
 formal rulemaking process and cites peer-reviewed science on water temperature and stream
@@ -1950,7 +1758,7 @@ start from a shared factual baseline rather than competing generalizations.
         text=alt.Text("label:N"),
     )
 
-    st.altair_chart(_stream_bar + _st_text_in + _st_text_out, use_container_width=True)
+    st.altair_chart(_stream_bar + _st_text_in + _st_text_out, width="stretch")
 
     # Non-fish sub-breakdown
     st.markdown("##### Inside the 15,367 miles of Non-Fish Streams")
@@ -2020,7 +1828,7 @@ start from a shared factual baseline rather than competing generalizations.
         y=alt.Y("continuity:N", sort="-x"),
         text=alt.Text("label:N"),
     )
-    st.altair_chart(_np_bar + _np_text_layer_in + _np_text_layer_out, use_container_width=True)
+    st.altair_chart(_np_bar + _np_text_layer_in + _np_text_layer_out, width="stretch")
 
     st.caption(
         "Source: Washington DNR FP Hydro layer, May 2026. County bounding box query — "
@@ -2285,7 +2093,7 @@ the tradeoff.
         )
     )
 
-    st.altair_chart(_press_bars + _press_text, use_container_width=True)
+    st.altair_chart(_press_bars + _press_text, width="stretch")
 
     _s_srs_gap  = f"${_srs_lapse_gap/1e6:.2f}M"
     _s_econ_mid = f"${_econ_mid/1e3:,.0f}K"
@@ -2343,7 +2151,7 @@ These alternatives deserve as much attention as the legal challenge.
     )
 
 # ════════════════════════════════════════════════════════════════════════════
-with tab_faq:
+if section == "❓ Questions & Sources":
     st.markdown("## Frequently Asked Questions")
     st.markdown(
         "Plain-English answers about this data and what it means for Skamania County."
@@ -2645,16 +2453,6 @@ The map shows FIA plot locations and timber volume. It does **not** show:
 Any real harvest proposal would need to overlay all of these before identifying a workable
 operating area. The harvestable fraction of the inventory shown here could be substantially
 smaller than the total volumes suggest.
-
----
-
-**🤝 The Zaugg / Terminal 2 partnership is speculative**
-
-This dashboard presents the Portside Terminal 2 / Zaugg Timber Solutions opportunity as a
-concrete near-term market. It is real and worth pursuing — but as of the data used here,
-no supply agreement between Skamania County (or the Gifford Pinchot NF) and Zaugg has been
-announced. Zaugg is a Swiss company new to the US market. Their production scale and feedstock
-sourcing strategy should be verified before county planning resources are committed.
 
 ---
 

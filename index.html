@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Open Gorge: Skamania Feedstock Inventory Dashboard</title>
+    <meta
+      name="description"
+      content="Skamania County forest inventory and forest-policy fiscal analysis — FIA timber data, Secure Rural Schools payment history, and traditional-vs-stewardship revenue math for public conversation."
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@stlite/browser@0.85.1/build/stlite.css"
+    />
+    <style>
+      html, body { margin: 0; padding: 0; }
+      #boot {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        max-width: 640px;
+        margin: 12vh auto;
+        padding: 0 24px;
+        color: #1e3a2f;
+        line-height: 1.5;
+      }
+      #boot h1 { font-size: 1.4rem; margin-bottom: 0.3rem; }
+      #boot .sub { color: #4a6a5a; font-size: 0.95rem; }
+      #boot .note {
+        margin-top: 1.5rem; font-size: 0.85rem; color: #6a7a72;
+        border-left: 3px solid #52b788; padding-left: 12px;
+      }
+      .spinner {
+        display: inline-block; width: 14px; height: 14px;
+        border: 2px solid #cde5d8; border-top-color: #2f8f5b;
+        border-radius: 50%; animation: spin 0.8s linear infinite;
+        vertical-align: middle; margin-right: 8px;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <div id="boot">
+        <h1>🌲 Open Gorge: Skamania Feedstock Dashboard</h1>
+        <p class="sub">
+          <span class="spinner"></span>Loading the dashboard in your browser…
+        </p>
+        <p class="sub">
+          This runs entirely on your device — the first load downloads the Python
+          runtime (about 15–30 seconds on a good connection). It's faster after that,
+          since your browser caches it.
+        </p>
+        <p class="note">
+          A project of SkamaniaDispatch / Open Gorge. Figures drawn from USDA Forest
+          Service FIA data, USFS ASR payment reports, WA DNR, and the Skamania BOCC
+          meeting record. Meeting-record figures are marked <em>pending written
+          confirmation</em> inside the dashboard.
+        </p>
+      </div>
+    </div>
+
+    <script type="module">
+      import { mount } from "https://cdn.jsdelivr.net/npm/@stlite/browser@0.85.1/build/stlite.js";
+
+      mount(
+        {
+          entrypoint: "app.py",
+          // streamlit bundles pandas, altair, AND pydeck — so no extra requirements are
+          // needed. Listing pydeck here forces micropip to re-resolve it from PyPI, which
+          // hangs on the "Installing packages" step. Empty list = use the bundled copies.
+          requirements: [],
+          files: {
+            "app.py": { url: "./app.py" },
+            "skamania_feedstock.json": { url: "./skamania_feedstock.json" },
+          },
+        },
+        document.getElementById("root")
+      );
+    </script>
+  </body>
+</html>
