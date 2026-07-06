@@ -319,6 +319,8 @@ with st.sidebar:
     # The timber/ownership filters only affect the map, so they only show there.
     if section == "🗺️ Where the Timber Is":
         st.divider()
+        st.markdown("### 🎛️ Map filters")
+        st.caption("Drill down: pick a tree size, price basis, and land owner to update the map.")
         if st.button(
             "🔥 Fuel Treatment View",
             use_container_width=True,
@@ -510,7 +512,7 @@ def _altair_fallback_map(
         .mark_circle(opacity=0.65, stroke="#ffffff", strokeWidth=0.3)
         .encode(
             x=x, y=y,
-            size=alt.Size(f"{size_field}:Q", legend=None, scale=alt.Scale(range=[8, 320])),
+            size=alt.Size(f"{size_field}:Q", legend=None, scale=alt.Scale(range=[10, 380])),
             color=color,
             tooltip=tooltip,
         )
@@ -758,8 +760,13 @@ if section == "🗺️ Where the Timber Is":
     st.markdown(
         "This map shows the county's timber, broken out by tree size and by who owns the land. "
         "The ownership split is the whole fiscal problem in one picture: the vast majority sits "
-        "on federal land that pays no property tax. Use the controls on the left to change the "
-        "tree size class, price basis, and owner."
+        "on federal land that pays no property tax."
+    )
+    st.info(
+        "👈 **Drill down using the “Map filters” in the left sidebar** — change the tree size "
+        "class, price basis, and land owner to update the map and the numbers below. "
+        "(On a phone, open the sidebar with the **›** arrow in the top-left.)",
+        icon="🎛️",
     )
     st.divider()
     st.markdown(f"### {cat['label']}")
@@ -976,14 +983,15 @@ if section == "🗺️ Where the Timber Is":
                     alt.Tooltip("LON:Q", title="Lon", format=".3f"),
                 ],
                 towns=TOWNS,
-                height=600,
+                height=780,
             ),
             use_container_width=False,
         )
         st.caption(
             "🗺️ Simplified map (web version): points plotted by longitude/latitude, colored by "
-            "ownership and sized by volume. Triangles mark towns. The full interactive basemap "
-            "with pan/zoom is available in the desktop version of this dashboard."
+            "ownership and sized by volume. Triangles mark towns. Skamania is taller than it is "
+            "wide, so the map is kept to true proportions rather than stretched to fill the window. "
+            "The full interactive basemap with pan/zoom is in the desktop version."
         )
 
     # Map legend when in "all" mode
